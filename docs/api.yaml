@@ -225,6 +225,869 @@ components:
           description: Number of users requested per page
           example: 20
 
+
+    DepartmentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique department identifier
+          example: "DEP-12"
+        name:
+          type: string
+          description: Department name
+          example: "Track Maintenance"
+        status:
+          type: string
+          description: Operational status of the department
+          example: "ACTIVE"
+
+    SectionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique railway section identifier
+          example: "SEC-101"
+        code:
+          type: string
+          description: Section code
+          example: "PN-DN"
+        name:
+          type: string
+          description: Section name
+          example: "Pune - Daund"
+        status:
+          type: string
+          description: Section operational status
+          example: "ACTIVE"
+
+    TrackResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique track identifier
+          example: "TRK-201"
+        section_id:
+          type: string
+          description: Railway section identifier
+          example: "SEC-101"
+        code:
+          type: string
+          description: Unique track code
+          example: "UP-ML-01"
+        name:
+          type: string
+          description: Track name or identifier
+          example: "UP Main Line"
+        status:
+          type: string
+          description: Track operational status
+          example: "ACTIVE"
+
+    BlockResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique block identifier
+          example: "BLK-B12"
+        track_id:
+          type: string
+          description: Track identifier
+          example: "TRK-201"
+        code:
+          type: string
+          description: Unique block code
+          example: "BLK-B12"
+        name:
+          type: string
+          description: Block name or identifier
+          example: "Block B-12"
+        status:
+          type: string
+          description: Block availability status
+          example: "AVAILABLE"
+
+    InfrastructureGraphResponse:
+      type: object
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/GraphNode"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/GraphEdge"
+
+    GraphNode:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the infrastructure node
+          example: "STN-101"
+        type:
+          type: string
+          description: Type of infrastructure element
+          example: "STATION"
+        name:
+          type: string
+          description: Display name of the infrastructure element
+          example: "Pune"
+        status:
+          type: string
+          description: Operational status
+          example: "ACTIVE"
+
+    GraphEdge:
+      type: object
+      properties:
+        source:
+          type: string
+          description: Identifier of the source node
+          example: "STN-101"
+        target:
+          type: string
+          description: Identifier of the target node
+          example: "TRK-201"
+        type:
+          type: string
+          description: Type of relationship
+          example: "CONNECTED_TO"
+
+    AssetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique asset identifier
+          example: "b1f7d23a-590b-4d7a-8d5f-9e7c5b6b3e01"
+        asset_type_id:
+          type: string
+          format: uuid
+          description: Asset type identifier
+          example: "a2e8c14b-601c-4e8b-9e6a-0f8d6c7c4f02"
+        track_section_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Track section associated with the asset
+          example: "c3f9d25c-712d-4f9c-af7b-1a9e7d8d5a03"
+        station_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Station associated with the asset
+          example: "d4a0e36d-823e-4a0d-b08c-2b0f8e9e6b04"
+        code:
+          type: string
+          description: Unique asset code
+          example: "SIG-102"
+        name:
+          type: string
+          description: Asset name
+          example: "Signal S-102"
+        status:
+          type: string
+          description: Operational status of the asset
+          example: "OPERATIONAL"
+        criticality:
+          type: string
+          description: Criticality level
+          example: "HIGH"
+
+    MaintenanceTaskResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique maintenance task identifier
+          example: "e5b1f47e-934f-4b1e-c19d-3c1a9f0f7c05"
+        asset_id:
+          type: string
+          format: uuid
+          description: Asset requiring maintenance
+          example: "b1f7d23a-590b-4d7a-8d5f-9e7c5b6b3e01"
+        task_code:
+          type: string
+          description: Unique maintenance task code
+          example: "MNT-2026-001"
+        maintenance_type:
+          type: string
+          description: Type of maintenance
+          example: "PREVENTIVE"
+        priority:
+          type: string
+          description: Task priority
+          example: "HIGH"
+        status:
+          type: string
+          description: Current lifecycle status of the task
+          example: "SCHEDULED"
+        description:
+          type: string
+          description: Description of maintenance work
+          example: "Routine signal inspection"
+        scheduled_start:
+          type: string
+          format: date-time
+          description: Planned maintenance start time
+          example: "2026-09-15T22:00:00Z"
+        scheduled_end:
+          type: string
+          format: date-time
+          description: Planned maintenance end time
+          example: "2026-09-16T04:00:00Z"
+
+    TrainTypeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique train type identifier
+          example: "f6c2a58f-045a-4c2f-d20e-4d2b0a1a8d06"
+        code:
+          type: string
+          description: Train type code
+          example: "EXP"
+        name:
+          type: string
+          description: Train type name
+          example: "Express Passenger"
+        description:
+          type: string
+          description: Detailed description
+          example: "Long-distance express passenger train"
+        category:
+          type: string
+          description: Category classification
+          example: "PASSENGER"
+        priority_class:
+          type: string
+          description: Priority classification for dispatching
+          example: "HIGH"
+
+    TrainResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique train identifier
+          example: "a7d3b69a-156b-4d3a-e31f-5e3c1b2b9e07"
+        train_type_id:
+          type: string
+          format: uuid
+          description: Train type identifier
+          example: "f6c2a58f-045a-4c2f-d20e-4d2b0a1a8d06"
+        train_number:
+          type: string
+          description: Train number
+          example: "12123"
+        train_name:
+          type: string
+          description: Train name
+          example: "Deccan Queen Express"
+        operator:
+          type: string
+          description: Operating railway zone or entity
+          example: "Central Railway"
+        status:
+          type: string
+          description: Train status
+          example: "ACTIVE"
+
+    TrainRouteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique route identifier
+          example: "b8e4c70b-267c-4e4b-f42a-6f4d2c3c0f08"
+        train_id:
+          type: string
+          format: uuid
+          description: Train identifier
+          example: "a7d3b69a-156b-4d3a-e31f-5e3c1b2b9e07"
+        route_code:
+          type: string
+          description: Route code
+          example: "PUNE-CSMT"
+        name:
+          type: string
+          description: Route name
+          example: "Pune Jn to Mumbai CSMT"
+        origin_station_id:
+          type: string
+          format: uuid
+          description: Origin station identifier
+          example: "d4a0e36d-823e-4a0d-b08c-2b0f8e9e6b04"
+        destination_station_id:
+          type: string
+          format: uuid
+          description: Destination station identifier
+          example: "e5b1f47e-934f-4b1e-c19d-3c1a9f0f7c05"
+        total_stations:
+          type: integer
+          description: Total number of stations on the route
+          example: 5
+
+    TrainRouteStopResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique route stop identifier
+          example: "c9f5d81c-378d-4f5c-a53b-7a5e3d4d1a09"
+        route_id:
+          type: string
+          format: uuid
+          description: Route identifier
+          example: "b8e4c70b-267c-4e4b-f42a-6f4d2c3c0f08"
+        station_id:
+          type: string
+          format: uuid
+          description: Station identifier
+          example: "d4a0e36d-823e-4a0d-b08c-2b0f8e9e6b04"
+        sequence_no:
+          type: integer
+          description: Stop sequence number along route
+          example: 1
+        arrival_offset_minutes:
+          type: integer
+          description: Offset minutes from departure for arrival
+          example: 0
+        departure_offset_minutes:
+          type: integer
+          description: Offset minutes from departure
+          example: 5
+
+    TrainScheduleResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique schedule identifier
+          example: "da06e92d-489e-4a6d-b64c-8b6f4e5e2b10"
+        train_id:
+          type: string
+          format: uuid
+          description: Train identifier
+          example: "a7d3b69a-156b-4d3a-e31f-5e3c1b2b9e07"
+        train_route_id:
+          type: string
+          format: uuid
+          description: Train route identifier
+          example: "b8e4c70b-267c-4e4b-f42a-6f4d2c3c0f08"
+        schedule_code:
+          type: string
+          description: Schedule code
+          example: "SCH-12123-D"
+        valid_from:
+          type: string
+          format: date
+          description: Start of validity period
+          example: "2026-01-01"
+        valid_until:
+          type: string
+          format: date
+          description: End of validity period
+          example: "2026-12-31"
+        operating_days:
+          type: string
+          description: Days of operation bitmask or string
+          example: "DAILY"
+        departure_time:
+          type: string
+          format: time
+          description: Scheduled departure time
+          example: "07:15:00"
+        arrival_time:
+          type: string
+          format: time
+          description: Scheduled arrival time
+          example: "10:25:00"
+        status:
+          type: string
+          description: Schedule status
+          example: "ACTIVE"
+
+    TrainRunResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique train run identifier
+          example: "eb17f03e-590f-4b7e-c75d-9c7a5f6f3c11"
+        train_id:
+          type: string
+          format: uuid
+          description: Train identifier
+          example: "a7d3b69a-156b-4d3a-e31f-5e3c1b2b9e07"
+        train_route_id:
+          type: string
+          format: uuid
+          description: Train route identifier
+          example: "b8e4c70b-267c-4e4b-f42a-6f4d2c3c0f08"
+        train_schedule_id:
+          type: string
+          format: uuid
+          description: Train schedule identifier
+          example: "da06e92d-489e-4a6d-b64c-8b6f4e5e2b10"
+        run_code:
+          type: string
+          description: Unique operational run code
+          example: "RUN-12123-20260915"
+        operation_date:
+          type: string
+          format: date
+          description: Date of operation
+          example: "2026-09-15"
+        status:
+          type: string
+          description: Run status
+          example: "SCHEDULED"
+        planned_start_at:
+          type: string
+          format: date-time
+          description: Planned departure time
+          example: "2026-09-15T07:15:00Z"
+        planned_end_at:
+          type: string
+          format: date-time
+          description: Planned arrival time
+          example: "2026-09-15T10:25:00Z"
+        actual_start_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Actual departure time
+          example: "2026-09-15T07:18:00Z"
+        actual_end_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Actual arrival time
+          example: "2026-09-15T10:28:00Z"
+
+    TrainRunStopResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique run stop identifier
+          example: "fc28a14f-601a-4c8f-d86e-0d8b6a7a4d12"
+        train_run_id:
+          type: string
+          format: uuid
+          description: Train run identifier
+          example: "eb17f03e-590f-4b7e-c75d-9c7a5f6f3c11"
+        station_id:
+          type: string
+          format: uuid
+          description: Station identifier
+          example: "d4a0e36d-823e-4a0d-b08c-2b0f8e9e6b04"
+        sequence_no:
+          type: integer
+          description: Stop sequence number
+          example: 1
+        planned_arrival_at:
+          type: string
+          format: date-time
+          description: Planned arrival time
+          example: "2026-09-15T07:10:00Z"
+        planned_departure_at:
+          type: string
+          format: date-time
+          description: Planned departure time
+          example: "2026-09-15T07:15:00Z"
+        actual_arrival_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Actual arrival time
+          example: "2026-09-15T07:12:00Z"
+        actual_departure_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Actual departure time
+          example: "2026-09-15T07:18:00Z"
+
+    TrainRunTrackSectionResponse:
+      type: object
+      properties:
+        track_section_id:
+          type: string
+          format: uuid
+          description: Track section identifier
+          example: "c3f9d25c-712d-4f9c-af7b-1a9e7d8d5a03"
+        sequence_no:
+          type: integer
+          description: Sequence order in train run
+          example: 1
+        planned_entry_at:
+          type: string
+          format: date-time
+          description: Planned entry time
+          example: "2026-09-15T07:15:00Z"
+        planned_exit_at:
+          type: string
+          format: date-time
+          description: Planned exit time
+          example: "2026-09-15T07:35:00Z"
+
+    SchedulingRunResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Scheduling run identifier
+          example: "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
+        created_by:
+          type: string
+          format: uuid
+          description: User who initiated the scheduling run
+          example: "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e"
+        run_code:
+          type: string
+          description: Scheduling run code
+          example: "SR-2026-09-01"
+        algorithm_type:
+          type: string
+          description: Algorithm used for optimization
+          example: "CP-SAT"
+        status:
+          type: string
+          description: Lifecycle status of the scheduling run
+          example: "COMPLETED"
+        planning_start_at:
+          type: string
+          format: date-time
+          description: Start of planning window
+          example: "2026-09-15T00:00:00Z"
+        planning_end_at:
+          type: string
+          format: date-time
+          description: End of planning window
+          example: "2026-09-22T00:00:00Z"
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Execution start timestamp
+          example: "2026-09-15T01:00:00Z"
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Execution completion timestamp
+          example: "2026-09-15T01:15:00Z"
+        objective_description:
+          type: string
+          description: High-level description of optimization objective
+          example: "Maximize asset availability and minimize train disruption"
+        objective_weights:
+          type: object
+          additionalProperties: true
+          description: Key-value weights for solver objectives
+        total_tasks_considered:
+          type: integer
+          description: Total maintenance tasks evaluated
+          example: 12
+        total_tasks_scheduled:
+          type: integer
+          description: Total maintenance tasks successfully scheduled
+          example: 10
+        total_tasks_unscheduled:
+          type: integer
+          description: Tasks that could not be scheduled
+          example: 2
+        error_message:
+          type: string
+          nullable: true
+          description: Error details if run failed
+
+    SchedulingRunTaskResponse:
+      type: object
+      properties:
+        scheduling_run_id:
+          type: string
+          format: uuid
+          description: Scheduling run identifier
+          example: "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
+        maintenance_task_id:
+          type: string
+          format: uuid
+          description: Maintenance task identifier
+          example: "e5b1f47e-934f-4b1e-c19d-3c1a9f0f7c05"
+        consideration_status:
+          type: string
+          description: Consideration status in the run
+          example: "SCHEDULED"
+        unscheduled_reason:
+          type: string
+          nullable: true
+          description: Reason if unscheduled
+        predicted_duration_hours:
+          type: number
+          format: double
+          description: Predicted duration in hours
+          example: 4.5
+        effective_duration_hours:
+          type: number
+          format: double
+          description: Effective duration in hours
+          example: 4.5
+        priority_score:
+          type: number
+          format: double
+          description: Calculated priority score
+          example: 85.5
+        risk_score:
+          type: number
+          format: double
+          description: Calculated risk score
+          example: 12.0
+
+    ScheduledTaskResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Scheduled task identifier
+          example: "3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f"
+        scheduling_run_id:
+          type: string
+          format: uuid
+          description: Scheduling run identifier
+          example: "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
+        maintenance_task_id:
+          type: string
+          format: uuid
+          description: Maintenance task identifier
+          example: "e5b1f47e-934f-4b1e-c19d-3c1a9f0f7c05"
+        status:
+          type: string
+          description: Scheduled status
+          example: "SCHEDULED"
+        planned_start_at:
+          type: string
+          format: date-time
+          description: Planned start time
+          example: "2026-09-16T01:00:00Z"
+        planned_end_at:
+          type: string
+          format: date-time
+          description: Planned end time
+          example: "2026-09-16T05:30:00Z"
+        planned_duration_hours:
+          type: number
+          format: double
+          description: Planned duration in hours
+          example: 4.5
+        objective_contribution:
+          type: number
+          format: double
+          description: Contribution score to optimization objective
+          example: 92.0
+        scheduling_reason:
+          type: string
+          description: Solver rationale for schedule placement
+          example: "Lowest traffic impact window"
+
+    ScheduledBlockResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Scheduled block identifier
+          example: "4d5e6f7a-8b9c-0d1e-2f3a-4b5c6d7e8f9a"
+        scheduling_run_id:
+          type: string
+          format: uuid
+          description: Scheduling run identifier
+          example: "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
+        scheduled_task_id:
+          type: string
+          format: uuid
+          description: Scheduled task identifier
+          example: "3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f"
+        block_section_id:
+          type: string
+          format: uuid
+          description: Block section identifier
+          example: "5e6f7a8b-9c0d-1e2f-3a4b-5c6d7e8f9a0b"
+        block_code:
+          type: string
+          description: Block code
+          example: "BLK-01"
+        status:
+          type: string
+          description: Status of block
+          example: "CONFIRMED"
+        planned_start_at:
+          type: string
+          format: date-time
+          description: Planned start time
+          example: "2026-09-16T01:00:00Z"
+        planned_end_at:
+          type: string
+          format: date-time
+          description: Planned end time
+          example: "2026-09-16T05:00:00Z"
+        duration_minutes:
+          type: integer
+          description: Duration in minutes
+          example: 240
+        full_block:
+          type: boolean
+          description: Whether full block is required
+          example: true
+        power_disconnection:
+          type: boolean
+          description: Whether OHE power disconnection is required
+          example: true
+        train_impact_score:
+          type: number
+          format: double
+          description: Impact on train operations
+          example: 15.0
+        asset_impact_score:
+          type: number
+          format: double
+          description: Impact on asset availability
+          example: 5.0
+        scheduling_reason:
+          type: string
+          description: Scheduling explanation
+          example: "Coordinated maintenance slot"
+
+    ScheduledBlockResourceResponse:
+      type: object
+      properties:
+        scheduled_block_id:
+          type: string
+          format: uuid
+          description: Scheduled block identifier
+          example: "4d5e6f7a-8b9c-0d1e-2f3a-4b5c6d7e8f9a"
+        resource_id:
+          type: string
+          format: uuid
+          description: Resource identifier
+          example: "6f7a8b9c-0d1e-2f3a-4b5c-6d7e8f9a0b1c"
+        quantity_allocated:
+          type: integer
+          description: Number of resource units allocated
+          example: 1
+        allocated_start_at:
+          type: string
+          format: date-time
+          description: Resource allocation start
+          example: "2026-09-16T01:00:00Z"
+        allocated_end_at:
+          type: string
+          format: date-time
+          description: Resource allocation end
+          example: "2026-09-16T05:00:00Z"
+
+    ScheduleConflictResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Conflict identifier
+          example: "7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d"
+        scheduling_run_id:
+          type: string
+          format: uuid
+          description: Scheduling run identifier
+          example: "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
+        scheduled_task_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Scheduled task involved in conflict
+          example: "3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f"
+        scheduled_block_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Scheduled block involved in conflict
+          example: "4d5e6f7a-8b9c-0d1e-2f3a-4b5c6d7e8f9a"
+        train_run_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Train run conflicting with block
+          example: "eb17f03e-590f-4b7e-c75d-9c7a5f6f3c11"
+        resource_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Resource with contention
+        track_section_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Track section affected
+        block_section_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Block section affected
+          example: "5e6f7a8b-9c0d-1e2f-3a4b-5c6d7e8f9a0b"
+        conflict_type:
+          type: string
+          description: Type of conflict
+          example: "TRAIN_BLOCK"
+        severity:
+          type: string
+          description: Conflict severity
+          example: "HIGH"
+        status:
+          type: string
+          description: Current resolution status
+          example: "RESOLVED"
+        description:
+          type: string
+          description: Conflict description
+          example: "Maintenance block overlaps with Train 12123 scheduled run"
+        conflict_duration_minutes:
+          type: integer
+          description: Overlap duration in minutes
+          example: 45
+        conflict_start_at:
+          type: string
+          format: date-time
+          description: Start of conflict window
+          example: "2026-09-16T02:00:00Z"
+        conflict_end_at:
+          type: string
+          format: date-time
+          description: End of conflict window
+          example: "2026-09-16T02:45:00Z"
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when conflict was resolved
+          example: "2026-09-16T01:30:00Z"
 security:
   - firebaseAuth: []
 
@@ -318,6 +1181,8 @@ paths:
           description: Current user retrieved successfully
           content:
             application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
               example:
                 id: "USR-1024"
                 email: "planner@railway.gov.in"
@@ -366,6 +1231,8 @@ paths:
           description: User profile updated successfully
           content:
             application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
               example:
                 id: "USR-1024"
                 name: "Rahul Sharma"
@@ -419,6 +1286,8 @@ paths:
           description: RailOpt-AI user created successfully
           content:
             application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
               example:
                 id: "USR-1024"
                 name: "Rahul Sharma"
@@ -508,6 +1377,10 @@ paths:
 
         "200":
           description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
 
         "400":
           description: Invalid query parameters
@@ -549,6 +1422,8 @@ paths:
           description: User retrieved successfully
           content:
             application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
               example:
                 id: "USR-1024"
                 name: "Rahul Sharma"
@@ -601,6 +1476,10 @@ paths:
 
         "200":
           description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
 
         "400":
           description: Invalid user data
@@ -651,6 +1530,10 @@ paths:
 
         "200":
           description: User role updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
 
         "400":
           description: Invalid or unsupported role
@@ -701,6 +1584,10 @@ paths:
 
         "200":
           description: User department updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
 
         "400":
           description: Invalid department data
@@ -754,6 +1641,10 @@ paths:
 
         "200":
           description: User status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
 
         "400":
           description: Invalid user status
@@ -883,6 +1774,10 @@ paths:
 
         "201":
           description: Department created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepartmentResponse"
 
         "400":
           description: Invalid department data
@@ -989,6 +1884,10 @@ paths:
 
         "200":
           description: Department updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepartmentResponse"
 
         "400":
           description: Invalid department data
@@ -1098,6 +1997,12 @@ paths:
 
         "200":
           description: Sections retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SectionResponse"
 
         "400":
           description: Invalid query parameters
@@ -1144,6 +2049,10 @@ paths:
 
         "201":
           description: Railway section created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SectionResponse"
 
         "400":
           description: Invalid section data
@@ -1183,6 +2092,10 @@ paths:
 
         "200":
           description: Railway section retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SectionResponse"
 
         "401":
           description: Unauthorized - Missing, invalid, or expired Firebase ID Token
@@ -1232,6 +2145,10 @@ paths:
 
         "200":
           description: Railway section updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SectionResponse"
 
         "400":
           description: Invalid section data
@@ -1308,6 +2225,12 @@ paths:
 
         "200":
           description: Tracks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrackResponse"
 
         "401":
           description: Unauthorized - Missing, invalid, or expired Firebase ID Token
@@ -1360,6 +2283,10 @@ paths:
 
         "201":
           description: Track created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrackResponse"
 
         "400":
           description: Invalid track data
@@ -1399,6 +2326,10 @@ paths:
 
         "200":
           description: Track retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrackResponse"
 
         "401":
           description: Unauthorized - Missing, invalid, or expired Firebase ID Token
@@ -1448,6 +2379,10 @@ paths:
 
         "200":
           description: Track updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrackResponse"
 
         "400":
           description: Invalid track data
@@ -1524,6 +2459,12 @@ paths:
 
         "200":
           description: Blocks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BlockResponse"
 
         "401":
           description: Unauthorized - Missing, invalid, or expired Firebase ID Token
@@ -1580,6 +2521,10 @@ paths:
 
         "201":
           description: Block created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockResponse"
 
         "400":
           description: Invalid block data
@@ -1622,6 +2567,10 @@ paths:
 
         "200":
           description: Block retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockResponse"
 
         "401":
           description: Unauthorized - Missing, invalid, or expired Firebase ID Token
@@ -1671,6 +2620,10 @@ paths:
 
         "200":
           description: Block updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockResponse"
 
         "400":
           description: Invalid block data
@@ -1775,6 +2728,8 @@ paths:
           description: Railway infrastructure graph retrieved successfully
           content:
             application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureGraphResponse"
               example:
 
                 nodes:
@@ -1914,6 +2869,12 @@ paths:
 
         "200":
           description: Assets retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AssetResponse"
 
         "400":
           description: Invalid query parameters
@@ -1980,6 +2941,10 @@ paths:
 
         "201":
           description: Railway asset created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetResponse"
 
         "400":
           description: Invalid asset data
@@ -2025,6 +2990,10 @@ paths:
 
         "200":
           description: Asset retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetResponse"
 
         "401":
           description: Unauthorized - Missing, invalid, or expired Firebase ID Token
@@ -2097,6 +3066,10 @@ paths:
 
         "200":
           description: Asset updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetResponse"
 
         "400":
           description: Invalid asset data
@@ -2199,6 +3172,12 @@ paths:
 
         "200":
           description: Assets retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AssetResponse"
 
         "400":
           description: Invalid track section identifier
@@ -2258,6 +3237,12 @@ paths:
 
         "200":
           description: Assets retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AssetResponse"
 
         "400":
           description: Invalid station identifier
@@ -2359,6 +3344,12 @@ paths:
 
         "200":
           description: Maintenance records retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MaintenanceTaskResponse"
 
         "400":
           description: Invalid query parameters
@@ -2423,6 +3414,10 @@ paths:
 
         "201":
           description: Maintenance record created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceTaskResponse"
 
         "400":
           description: Invalid maintenance data
@@ -2465,6 +3460,10 @@ paths:
 
         "200":
           description: Maintenance record retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceTaskResponse"
 
         "401":
           description: Unauthorized - Missing, invalid, or expired Firebase ID Token
@@ -2528,6 +3527,10 @@ paths:
 
         "200":
           description: Maintenance record updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceTaskResponse"
 
         "400":
           description: Invalid maintenance data
@@ -2639,6 +3642,12 @@ paths:
 
         "200":
           description: Asset maintenance records retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MaintenanceTaskResponse"
 
         "400":
           description: Invalid asset identifier
@@ -2696,6 +3705,10 @@ paths:
 
         "200":
           description: Maintenance status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceTaskResponse"
 
         "400":
           description: Invalid status or invalid state transition
@@ -2774,6 +3787,12 @@ paths:
 
         "200":
           description: Train types retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrainTypeResponse"
 
         "400":
           description: Invalid query parameters
@@ -2831,6 +3850,10 @@ paths:
 
         "201":
           description: Train type created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainTypeResponse"
 
         "400":
           description: Invalid train type data
@@ -2867,6 +3890,10 @@ paths:
 
         "200":
           description: Train type retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainTypeResponse"
 
         "401":
           description: Unauthorized - Missing, invalid, or expired Firebase ID Token
@@ -2921,6 +3948,10 @@ paths:
 
         "200":
           description: Train type updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainTypeResponse"
 
         "400":
           description: Invalid train type data
@@ -3036,6 +4067,12 @@ paths:
 
         "200":
           description: Trains retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrainResponse"
 
         "400":
           description: Invalid query parameters
@@ -3090,6 +4127,10 @@ paths:
 
         "201":
           description: Train created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainResponse"
 
         "400":
           description: Invalid train data
@@ -3131,6 +4172,10 @@ paths:
 
         "200":
           description: Train retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainResponse"
 
         "401":
           description: Unauthorized - Missing, invalid, or expired Firebase ID Token
@@ -3185,6 +4230,10 @@ paths:
 
         "200":
           description: Train updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainResponse"
 
         "400":
           description: Invalid train data
@@ -3268,6 +4317,12 @@ paths:
 
         "200":
           description: Train routes retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrainRouteResponse"
 
         "401":
           description: Unauthorized - Missing, invalid, or expired Firebase ID Token
@@ -3327,6 +4382,10 @@ paths:
 
         "201":
           description: Train route created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainRouteResponse"
 
         "400":
           description: Invalid route data
@@ -3365,6 +4424,10 @@ paths:
 
         "200":
           description: Train route retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainRouteResponse"
 
         "401":
           description: Unauthorized - Missing, invalid, or expired Firebase ID Token
@@ -3419,6 +4482,10 @@ paths:
 
         "200":
           description: Train route updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainRouteResponse"
 
         "400":
           description: Invalid route data
@@ -3504,6 +4571,12 @@ paths:
 
         "200":
           description: Route stops retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrainRouteStopResponse"
 
         "401":
           description: Unauthorized - Missing, invalid, or expired Firebase ID Token
@@ -3561,6 +4634,10 @@ paths:
 
         "201":
           description: Route stop created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainRouteStopResponse"
 
         "400":
           description: Invalid route stop data
@@ -3623,6 +4700,10 @@ paths:
 
         "200":
           description: Route stop updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainRouteStopResponse"
 
         "400":
           description: Invalid route stop data
@@ -3725,6 +4806,12 @@ paths:
 
         "200":
           description: Train schedules retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrainScheduleResponse"
 
         "400":
           description: Invalid schedule filters
@@ -3804,6 +4891,10 @@ paths:
 
         "201":
           description: Train schedule created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainScheduleResponse"
 
         "400":
           description: Invalid schedule data
@@ -3842,6 +4933,10 @@ paths:
 
         "200":
           description: Train schedule retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainScheduleResponse"
 
         "401":
           description: Unauthorized - Missing, invalid, or expired Firebase ID Token
@@ -3907,6 +5002,10 @@ paths:
 
         "200":
           description: Train schedule updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainScheduleResponse"
 
         "400":
           description: Invalid schedule data
@@ -4032,6 +5131,12 @@ paths:
 
         "200":
           description: Train runs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrainRunResponse"
 
         "400":
           description: Invalid run filters
@@ -4108,6 +5213,10 @@ paths:
 
         "201":
           description: Train run created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainRunResponse"
 
         "400":
           description: Invalid train run data
@@ -4152,6 +5261,10 @@ paths:
 
         "200":
           description: Train run retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainRunResponse"
 
         "401":
           description: Unauthorized - Missing, invalid, or expired Firebase ID Token
@@ -4209,6 +5322,10 @@ paths:
 
         "200":
           description: Train run updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainRunResponse"
 
         "400":
           description: Invalid run data or invalid operational state transition
@@ -4258,6 +5375,12 @@ paths:
 
         "200":
           description: Train run stops retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrainRunStopResponse"
 
         "401":
           description: Unauthorized - Missing, invalid, or expired Firebase ID Token
@@ -4315,6 +5438,10 @@ paths:
 
         "201":
           description: Train run stop created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainRunStopResponse"
 
         "400":
           description: Invalid run stop data
@@ -4381,6 +5508,10 @@ paths:
 
         "200":
           description: Train run stop updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainRunStopResponse"
 
         "400":
           description: Invalid run stop data
@@ -4429,6 +5560,12 @@ paths:
 
         "200":
           description: Train run track sections retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrainRunTrackSectionResponse"
 
         "401":
           description: Unauthorized - Missing, invalid, or expired Firebase ID Token
@@ -4486,6 +5623,10 @@ paths:
 
         "201":
           description: Track section added to train run successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainRunTrackSectionResponse"
 
         "400":
           description: Invalid train run track section data
@@ -4551,6 +5692,10 @@ paths:
 
         "200":
           description: Train run track section updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainRunTrackSectionResponse"
 
         "400":
           description: Invalid track section data
@@ -5908,6 +7053,10 @@ paths:
       responses:
         "200":
           description: Scheduling run updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulingRunResponse"
 
         "400":
           description: Invalid scheduling run data
@@ -6047,6 +7196,10 @@ paths:
       responses:
         "201":
           description: Maintenance task added to scheduling run successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulingRunTaskResponse"
 
         "400":
           description: Invalid scheduling task data
@@ -6120,6 +7273,10 @@ paths:
       responses:
         "200":
           description: Scheduling run task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulingRunTaskResponse"
 
         "400":
           description: Invalid scheduling task data
@@ -6298,6 +7455,10 @@ paths:
       responses:
         "201":
           description: Scheduled task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduledTaskResponse"
 
         "400":
           description: Invalid scheduled task data
@@ -6422,6 +7583,10 @@ paths:
       responses:
         "200":
           description: Scheduled task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduledTaskResponse"
 
         "400":
           description: Invalid scheduled task data
@@ -6613,6 +7778,10 @@ paths:
       responses:
         "201":
           description: Scheduled block created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduledBlockResponse"
 
         "400":
           description: Invalid scheduled block data
@@ -6757,6 +7926,10 @@ paths:
       responses:
         "200":
           description: Scheduled block updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduledBlockResponse"
 
         "400":
           description: Invalid scheduled block data
@@ -6901,6 +8074,10 @@ paths:
       responses:
         "201":
           description: Resource allocated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduledBlockResourceResponse"
 
         "400":
           description: Invalid resource allocation data
@@ -6963,6 +8140,10 @@ paths:
       responses:
         "200":
           description: Resource allocation updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduledBlockResourceResponse"
 
         "400":
           description: Invalid resource allocation data
@@ -7164,6 +8345,10 @@ paths:
       responses:
         '201':
           description: Conflict created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduleConflictResponse"
         '400':
           description: Invalid conflict data
 
@@ -7275,6 +8460,10 @@ paths:
       responses:
         '200':
           description: Conflict updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduleConflictResponse"
         '400':
           description: Invalid conflict data
         '404':
@@ -7329,6 +8518,10 @@ paths:
       responses:
         '200':
           description: Conflict status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduleConflictResponse"
         '400':
           description: Invalid status
         '404':
