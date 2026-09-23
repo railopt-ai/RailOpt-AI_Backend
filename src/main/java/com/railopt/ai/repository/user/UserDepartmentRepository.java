@@ -23,4 +23,7 @@ public interface UserDepartmentRepository extends JpaRepository<UserDepartment, 
 
     @Query("SELECT ud FROM UserDepartment ud WHERE ud.id.userId = :userId AND ud.leftAt IS NULL ORDER BY ud.joinedAt DESC")
     List<UserDepartment> findActiveByUserIdOrderByJoinedAtDesc(@Param("userId") UUID userId);
+
+    @Query("SELECT COUNT(ud) > 0 FROM UserDepartment ud WHERE ud.id.departmentId = :departmentId AND ud.leftAt IS NULL")
+    boolean existsActiveByDepartmentId(@Param("departmentId") UUID departmentId);
 }
