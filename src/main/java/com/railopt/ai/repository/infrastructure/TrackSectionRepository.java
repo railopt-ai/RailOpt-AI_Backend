@@ -5,7 +5,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.railopt.ai.entity.infrastructure.TrackSection;
+import com.railopt.ai.model.infrastructure.TrackSection;
 
 /** Repository interface for {@link TrackSection}. */
 @Repository

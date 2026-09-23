@@ -5,7 +5,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.railopt.ai.entity.forecasting.TrafficForecast;
+import com.railopt.ai.model.forecasting.TrafficForecast;
 
 /** Repository interface for {@link TrafficForecast}. */
 @Repository

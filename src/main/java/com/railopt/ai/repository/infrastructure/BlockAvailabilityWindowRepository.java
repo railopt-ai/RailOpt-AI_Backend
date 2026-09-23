@@ -5,7 +5,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.railopt.ai.entity.infrastructure.BlockAvailabilityWindow;
+import com.railopt.ai.model.infrastructure.BlockAvailabilityWindow;
 
 /** Repository interface for {@link BlockAvailabilityWindow}. */
 @Repository

@@ -3,8 +3,8 @@ package com.railopt.ai.repository.infrastructure;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.railopt.ai.entity.infrastructure.CorridorTrackSection;
-import com.railopt.ai.entity.infrastructure.CorridorTrackSectionId;
+import com.railopt.ai.model.infrastructure.CorridorTrackSection;
+import com.railopt.ai.model.infrastructure.CorridorTrackSectionId;
 
 /** Repository interface for {@link CorridorTrackSection}. */
 @Repository

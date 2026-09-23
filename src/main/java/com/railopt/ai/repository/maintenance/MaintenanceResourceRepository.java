@@ -5,7 +5,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.railopt.ai.entity.maintenance.MaintenanceResource;
+import com.railopt.ai.model.maintenance.MaintenanceResource;
 
 /** Repository interface for {@link MaintenanceResource}. */
 @Repository

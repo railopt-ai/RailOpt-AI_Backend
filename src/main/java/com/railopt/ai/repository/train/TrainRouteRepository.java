@@ -5,7 +5,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.railopt.ai.entity.train.TrainRoute;
+import com.railopt.ai.model.train.TrainRoute;
 
 /** Repository interface for {@link TrainRoute}. */
 @Repository
