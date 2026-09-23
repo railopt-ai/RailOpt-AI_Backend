@@ -1,0 +1,675 @@
+---
+description: REST API and OpenAPI implementation rules for the RailOpt-AI backend
+
+globs:
+  - "src/**/controller/**/*.java"
+  - "src/**/dto/**/*.java"
+  - "src/**/exception/**/*.java"
+  - "src/main/resources/**/*.properties"
+  - "src/main/resources/**/*.yml"
+  - "src/main/resources/**/*.yaml"
+
+alwaysApply: false
+---
+
+# RailOpt-AI API Rules
+
+## 1. Core Principle
+
+The REST API is the contract between the React frontend and Spring Boot backend.
+
+The authoritative API specification is:
+
+    docs/api.yaml
+
+Implement APIs according to the documented contract.
+
+Do not invent endpoints, request fields, response fields, or API behavior when they are already defined in the specification.
+
+---
+
+## 2. Before Implementing an API
+
+Before creating or modifying an endpoint:
+
+1. Read the relevant section of `docs/api.yaml`.
+2. Read the relevant tables in `docs/database-schema.mmd`.
+3. Read the relevant section of `ARCHITECTURE.md`.
+4. Inspect existing controllers, services, and DTOs.
+5. Check whether the endpoint already exists.
+6. Identify:
+   - HTTP method
+   - path
+   - path parameters
+   - query parameters
+   - request body
+   - response body
+   - status codes
+   - validation requirements
+7. Only then implement the endpoint.
+
+---
+
+## 3. API Structure
+
+Use the following flow:
+
+    HTTP Request
+        ↓
+    Controller
+        ↓
+    Service
+        ↓
+    Repository / External Service
+        ↓
+    Service
+        ↓
+    Response DTO
+        ↓
+    HTTP Response
+
+Controllers should remain thin.
+
+Business logic belongs in services.
+
+---
+
+## 4. HTTP Methods
+
+Use HTTP methods according to their intended purpose:
+
+    GET
+        Read data
+
+    POST
+        Create a resource or execute a defined operation
+
+    PATCH
+        Partially update a resource
+
+    DELETE
+        Delete a resource
+
+Do not use POST for ordinary updates when PATCH is already defined by the API contract.
+
+---
+
+## 5. API Paths
+
+Follow the exact paths defined in `docs/api.yaml`.
+
+Do not introduce an `/api/v1` prefix unless explicitly defined.
+
+Use the documented naming convention.
+
+Examples:
+
+    /train
+    /train/{trainId}
+    /scheduling-run
+    /scheduled-task/{scheduledTaskId}
+    /schedule-conflict/{conflictId}
+
+Do not rename existing paths without an explicit API change.
+
+---
+
+## 6. Path Parameters
+
+Every `{parameter}` in a path must have a corresponding required path parameter.
+
+Example:
+
+    /train/{trainId}
+
+must define:
+
+    name: trainId
+    in: path
+    required: true
+
+Do not leave path parameters implicit.
+
+The parameter name must match exactly between the path and the parameter definition.
+
+---
+
+## 7. Query Parameters
+
+Use query parameters for filtering, searching, pagination, or other retrieval options when defined by the API.
+
+Do not introduce unnecessary query parameters.
+
+Example:
+
+    GET /train?typeId=1
+
+Query parameters should have:
+
+- clear names
+- correct data types
+- appropriate descriptions
+- documented optional/required behavior
+
+---
+
+## 8. Request DTOs
+
+Use request DTOs for structured request bodies.
+
+A request DTO should contain only fields required by the endpoint.
+
+Do not automatically expose every database column.
+
+Example:
+
+    CreateTrainRequest
+    UpdateTrainRequest
+
+Use separate DTOs when create and update operations require different fields.
+
+---
+
+## 9. Response DTOs
+
+Use response DTOs for API responses.
+
+Do not expose JPA entities directly from controllers.
+
+Response DTOs should contain only fields defined or required by the API contract.
+
+Do not expose internal implementation details.
+
+Do not automatically expose:
+
+    created_at
+    updated_at
+
+unless explicitly required by the API.
+
+---
+
+## 10. Entity vs DTO
+
+Keep database entities and API models separate.
+
+The flow should normally be:
+
+    Request DTO
+        ↓
+    Service
+        ↓
+    Entity
+        ↓
+    Repository
+        ↓
+    Entity
+        ↓
+    Service
+        ↓
+    Response DTO
+
+Do not make API design dependent on the exact shape of JPA entities.
+
+---
+
+## 11. Validation
+
+Validate request data before processing.
+
+Use Jakarta validation where appropriate.
+
+Examples:
+
+    @NotNull
+    @NotBlank
+    @Positive
+    @PositiveOrZero
+    @Size
+
+Validation should cover malformed or missing input.
+
+Business rules should still be validated in the service layer.
+
+---
+
+## 12. HTTP Status Codes
+
+Use appropriate HTTP status codes.
+
+Typical conventions:
+
+    200 OK
+        Successful GET/PATCH operation
+
+    201 Created
+        Successful resource creation
+
+    204 No Content
+        Successful deletion when no response body is required
+
+    400 Bad Request
+        Invalid request data
+
+    401 Unauthorized
+        Missing or invalid authentication
+
+    403 Forbidden
+        Authenticated but not permitted
+
+    404 Not Found
+        Resource does not exist
+
+    409 Conflict
+        Resource/business-state conflict
+
+    500 Internal Server Error
+        Unexpected server failure
+
+Follow `docs/api.yaml` when it defines a specific response.
+
+---
+
+## 13. Error Response
+
+Use the project's standard error structure:
+
+    ErrorResponse
+
+Fields:
+
+    status
+    error
+    message
+    path
+
+Do not expose:
+
+- stack traces
+- SQL statements
+- database credentials
+- Firebase tokens
+- internal implementation details
+
+Use centralized exception handling where appropriate.
+
+---
+
+## 14. Authentication
+
+Protected APIs use Firebase Authentication.
+
+The frontend sends:
+
+    Authorization: Bearer <firebase-id-token>
+
+Spring Boot verifies the token before processing protected requests.
+
+Do not create a separate authentication mechanism unless explicitly required.
+
+Controllers should not manually verify Firebase tokens.
+
+Authentication belongs in the security layer.
+
+---
+
+## 15. Authorization
+
+Authentication identifies the user.
+
+Authorization determines whether the user can perform an operation.
+
+If authorization rules are required:
+
+- enforce them at the appropriate security/service layer
+- do not rely only on frontend restrictions
+- do not invent roles or permissions without a project requirement
+
+---
+
+## 16. API Tags
+
+Use the existing API tags:
+
+    System
+    User
+    Organization
+    Infrastructure
+    Assets
+    Maintenance
+    Train Operations
+    Forecasting
+    Scheduling
+    Conflicts
+    Metrics
+    AI/ML
+
+Do not create duplicate tags.
+
+Do not create a new tag when an existing tag already represents the module.
+
+---
+
+## 17. API and Database Relationship
+
+The API must be based on the finalized database schema.
+
+Before implementing a CRUD endpoint:
+
+    Check API specification
+            ↓
+    Check database table
+            ↓
+    Check relationships
+            ↓
+    Check existing implementation
+            ↓
+    Implement
+
+The API should not blindly mirror every database field.
+
+The API represents business/application requirements.
+
+---
+
+## 18. CRUD APIs
+
+Use CRUD operations only where they make sense for the domain.
+
+Typical resource operations may include:
+
+    GET collection
+    POST collection
+    GET resource
+    PATCH resource
+    DELETE resource
+
+Do not automatically create all five operations for every table.
+
+For derived or calculated resources, such as metrics, only implement the operations defined by the API contract.
+
+---
+
+## 19. Nested Resources
+
+Use nested paths when they represent a meaningful parent-child relationship defined by the schema/API.
+
+Examples:
+
+    /train-run/{runId}/block-section
+
+    /scheduled-task/{scheduledTaskId}/block
+
+    /scheduled-block/{scheduledBlockId}/resource
+
+Before creating nested APIs, verify the actual database relationship.
+
+Do not create nested routes simply because two entities appear related.
+
+---
+
+## 20. Scheduling APIs
+
+Scheduling is a core application domain.
+
+Relevant APIs include resources related to:
+
+    Scheduling Runs
+    Scheduling Run Tasks
+    Scheduled Tasks
+    Scheduled Blocks
+    Scheduled Block Resources
+
+Before implementing scheduling endpoints:
+
+1. Check the scheduling schema.
+2. Check `docs/api.yaml`.
+3. Check related train, maintenance, resource, and conflict models.
+4. Reuse existing DTOs/services where appropriate.
+
+Do not invent scheduling endpoints based only on the prototype UI.
+
+---
+
+## 21. Conflict APIs
+
+Conflict APIs operate on the finalized conflict model.
+
+The main resource is:
+
+    /schedule-conflict
+
+Possible operations are defined by `docs/api.yaml`.
+
+Conflict status changes should follow the documented API rather than being implemented as arbitrary CRUD operations.
+
+---
+
+## 22. Metrics APIs
+
+Metrics are derived information.
+
+The finalized metric resources include:
+
+    /schedule-metric
+    /schedule-baseline-metric
+
+Do not automatically add:
+
+    POST
+    PATCH
+    DELETE
+
+for metrics.
+
+Only implement operations defined by the API contract.
+
+Do not hard-code prototype metric values.
+
+---
+
+## 23. Forecasting APIs
+
+Forecasting APIs operate on:
+
+    TRAFFIC_FORECASTS
+    TRAFFIC_FORECAST_ITEMS
+
+Use the existing Forecasting API definitions.
+
+Do not expose database metadata unnecessarily.
+
+Forecasting APIs may provide data consumed by scheduling and AI/ML workflows.
+
+---
+
+## 24. Train Operations APIs
+
+Train-operation APIs must follow the finalized train-operation model.
+
+Relevant resources include:
+
+    Train
+    Train Route
+    Train Route Stop
+    Train Schedule
+    Train Run
+    Train Run Stop
+    Train Run Track Section
+    Train Run Block Section
+
+Before adding an endpoint, check its corresponding schema relationship.
+
+---
+
+## 25. AI/ML APIs
+
+Python AI/ML is a separate service.
+
+Do not expose internal Python service endpoints directly to the React frontend unless explicitly required.
+
+The normal application flow is:
+
+    React
+        ↓
+    Spring Boot
+        ↓
+    Python AI/ML
+        ↓
+    Spring Boot
+        ↓
+    React
+
+Spring Boot remains the public application API layer.
+
+---
+
+## 26. External Service Errors
+
+If an API depends on the Python AI/ML service:
+
+- handle connection failures
+- handle timeouts
+- handle invalid responses
+- handle incomplete results
+- do not expose raw Python errors to clients
+
+Return an appropriate application-level error.
+
+---
+
+## 27. API Consistency
+
+Use consistent:
+
+- naming
+- request structures
+- response structures
+- status codes
+- error handling
+- parameter naming
+
+Follow existing API patterns before introducing a new pattern.
+
+---
+
+## 28. Documentation Synchronization
+
+Whenever an API changes:
+
+    docs/api.yaml
+          ↓
+    Controller
+          ↓
+    DTO
+          ↓
+    Service
+
+Keep the implementation and API specification synchronized.
+
+If an endpoint is added or modified intentionally, update `docs/api.yaml`.
+
+Do not leave undocumented public endpoints.
+
+---
+
+## 29. Existing API Code
+
+Before creating a controller or endpoint:
+
+1. Search for the existing path.
+2. Search for the related entity.
+3. Search for the related DTO.
+4. Search for the related service.
+5. Reuse existing implementation where appropriate.
+
+Do not create duplicate controllers or endpoints.
+
+---
+
+## 30. Minimal API Changes
+
+When modifying an existing API:
+
+- change only what is required
+- preserve existing behavior
+- avoid unrelated refactoring
+- avoid renaming fields without an API requirement
+- avoid changing status codes without justification
+- avoid breaking existing frontend expectations
+
+---
+
+## 31. Prototype Boundary
+
+The prototype may contain simplified endpoints such as:
+
+    GET /tracks
+    GET /maintenance-requests
+    GET /conflicts
+    GET /kpis
+    POST /optimize
+
+These prototype endpoints are not automatically authoritative.
+
+The main backend must follow:
+
+    docs/api.yaml
+    docs/database-schema.mmd
+    ARCHITECTURE.md
+
+Do not copy prototype APIs blindly.
+
+---
+
+## 32. API Testing
+
+Every implemented endpoint should be tested for:
+
+- successful request
+- invalid request
+- missing required fields
+- invalid path parameters
+- resource not found
+- authentication failure
+- authorization failure where applicable
+- business conflict where applicable
+- unexpected service/database failure
+
+Verify that the actual response matches the documented API contract.
+
+---
+
+## 33. Final API Rule
+
+Always follow:
+
+    READ API SPECIFICATION
+            ↓
+    READ DATABASE SCHEMA
+            ↓
+    CHECK ARCHITECTURE
+            ↓
+    CHECK EXISTING CODE
+            ↓
+    IMPLEMENT CONTROLLER
+            ↓
+    IMPLEMENT / REUSE DTO
+            ↓
+    IMPLEMENT SERVICE
+            ↓
+    VALIDATE
+            ↓
+    TEST
+            ↓
+    VERIFY AGAINST docs/api.yaml
+
+Never invent APIs when the contract already exists.
+
+Never expose JPA entities directly without a clear reason.
+
+Never expose unnecessary database fields.
+
+Never allow the frontend to bypass Spring Boot for core application operations.
+
+Keep `docs/api.yaml` and the actual backend implementation synchronized.

@@ -1,0 +1,610 @@
+---
+description: Spring Boot implementation rules for the RailOpt-AI backend
+
+globs:
+  - "src/**/*.java"
+  - "src/**/*.xml"
+  - "src/**/*.properties"
+  - "src/**/*.yml"
+  - "src/**/*.yaml"
+
+alwaysApply: false
+---
+
+# RailOpt-AI Spring Boot Rules
+
+## 1. Core Principle
+
+The backend is a Spring Boot REST API.
+
+Follow the existing project architecture and conventions.
+
+Do not redesign the architecture unless explicitly instructed.
+
+The source-of-truth priority is:
+
+1. Explicit user instruction
+2. docs/database-schema.mmd
+3. docs/api.yaml
+4. ARCHITECTURE.md
+5. Existing backend implementation
+6. Generic Spring Boot conventions
+7. AI assumptions
+
+Never override the database schema or API contract based on assumptions.
+
+---
+
+## 2. Before Implementing Any Module
+
+Before writing code for a module:
+
+1. Read `docs/database-schema.mmd`.
+2. Read the relevant section of `docs/api.yaml`.
+3. Read the relevant section of `ARCHITECTURE.md`.
+4. Inspect existing implementations of similar modules.
+5. Identify the required:
+   - tables
+   - relationships
+   - endpoints
+   - request fields
+   - response fields
+   - path parameters
+   - validation requirements
+6. Identify which existing classes can be reused.
+7. Only then implement the module.
+
+Do not create APIs first and design the database mapping afterward.
+
+---
+
+## 3. Layered Architecture
+
+Use the following backend flow:
+
+Controller
+    ↓
+Service
+    ↓
+Repository
+    ↓
+PostgreSQL
+
+For AI/ML operations:
+
+Controller
+    ↓
+Service
+    ↓
+Python AI/ML Service
+    ↓
+Service
+    ↓
+Repository
+    ↓
+PostgreSQL
+
+Responsibilities:
+
+### Controller
+
+- Handle HTTP requests.
+- Validate request input.
+- Call the appropriate service.
+- Return the API response.
+- Do not contain business logic.
+- Do not access repositories directly.
+
+### Service
+
+- Contain business logic.
+- Coordinate repositories.
+- Coordinate external services such as the Python AI/ML service.
+- Perform business validation and decision-making.
+- Handle transactions where appropriate.
+
+### Repository
+
+- Handle database persistence and retrieval.
+- Use Spring Data JPA where appropriate.
+- Do not contain business decisions.
+
+### Entity
+
+- Represent database tables and relationships.
+- Match the finalized database schema.
+- Do not add fields that are not supported by the schema.
+
+### DTO
+
+- Represent API request and response models.
+- Do not expose JPA entities directly from controllers.
+- Include only fields required by the API contract.
+
+---
+
+## 4. Package Structure
+
+Follow the existing project package structure.
+
+Prefer a feature/module-oriented structure when consistent with the existing codebase.
+
+Example:
+
+    controller/
+    service/
+    repository/
+    entity/
+    dto/
+    exception/
+    config/
+    security/
+
+Do not create unnecessary packages or abstractions.
+
+Reuse existing project conventions when they already exist.
+
+---
+
+## 5. Database and JPA Rules
+
+PostgreSQL is the application database.
+
+Flyway is responsible for database schema creation and evolution.
+
+Hibernate/JPA is responsible for entity mapping and persistence, not schema modification.
+
+Use:
+
+    spring.jpa.hibernate.ddl-auto=validate
+
+Do not use:
+
+    ddl-auto=update
+    ddl-auto=create
+    ddl-auto=create-drop
+
+Database schema changes must be made through Flyway migrations.
+
+Migration files belong under:
+
+    src/main/resources/db/migration/
+
+Example:
+
+    V1__initial_schema.sql
+    V2__add_forecasting_tables.sql
+
+When the schema changes:
+
+1. Update `docs/database-schema.mmd`.
+2. Create the required Flyway migration.
+3. Update the affected JPA entities.
+4. Validate the schema/entity mapping.
+5. Update affected APIs if required.
+6. Test the changes.
+
+Do not silently modify or recreate the database schema.
+
+---
+
+## 6. Entity Rules
+
+Before creating or modifying an entity:
+
+1. Check the corresponding table in `docs/database-schema.mmd`.
+2. Check its columns.
+3. Check primary keys.
+4. Check foreign keys.
+5. Check relationships.
+6. Check nullable fields and data types.
+
+Do not invent database fields.
+
+Database metadata fields such as `created_at` and `updated_at` should not automatically be exposed through APIs.
+
+Only expose fields required by the API contract.
+
+Use appropriate JPA relationship mappings and avoid unnecessary eager loading.
+
+---
+
+## 7. API Rules
+
+The authoritative API contract is:
+
+    docs/api.yaml
+
+Every API implementation must match the documented:
+
+- HTTP method
+- path
+- path parameters
+- request body
+- response body
+- status codes
+
+Every `{parameter}` in an endpoint path must have a corresponding required `in: path` parameter.
+
+Do not add an `/api/v1` prefix unless it exists in the API specification.
+
+Do not create additional public endpoints without a clear requirement.
+
+When an API contract changes, update `docs/api.yaml` together with the implementation.
+
+---
+
+## 8. DTO Rules
+
+Use separate request and response DTOs where appropriate.
+
+Do not return JPA entities directly from controllers.
+
+Do not expose every database column automatically.
+
+API models should represent business/API requirements rather than simply mirroring database tables.
+
+Avoid exposing:
+
+- `created_at`
+- `updated_at`
+
+unless explicitly required by the API.
+
+---
+
+## 9. Validation
+
+Validate incoming request data using Jakarta validation where appropriate.
+
+Common annotations include:
+
+    @NotNull
+    @NotBlank
+    @Positive
+    @PositiveOrZero
+    @Size
+
+Validation should handle malformed or missing input before business processing.
+
+Business validation belongs in the service layer.
+
+---
+
+## 10. Exception Handling
+
+Use centralized exception handling where appropriate.
+
+Return the project's standard error structure:
+
+    status
+    error
+    message
+    path
+
+Do not expose stack traces, database details, credentials, or internal implementation details to API clients.
+
+Use appropriate HTTP status codes:
+
+    400 - Bad Request
+    401 - Unauthorized
+    403 - Forbidden
+    404 - Not Found
+    409 - Conflict
+    500 - Internal Server Error
+
+Follow `docs/api.yaml` when a specific endpoint defines a different response.
+
+---
+
+## 11. Dependency Injection
+
+Use constructor injection.
+
+Preferred:
+
+    private final TrainRepository trainRepository;
+
+    public TrainService(TrainRepository trainRepository) {
+        this.trainRepository = trainRepository;
+    }
+
+Avoid field injection with `@Autowired`.
+
+---
+
+## 12. Transactions
+
+Use `@Transactional` at the service layer when an operation must be atomic.
+
+Examples include:
+
+- creating related scheduling records
+- creating scheduled blocks and resources
+- updating multiple related records
+- persisting an optimization result
+
+Do not add transactions unnecessarily.
+
+---
+
+## 13. Firebase Authentication
+
+Authentication is handled by Firebase Authentication.
+
+The frontend sends:
+
+    Authorization: Bearer <firebase-id-token>
+
+Spring Boot must verify the Firebase ID token.
+
+The Firebase UID identifies the authenticated user.
+
+Authentication belongs in the security layer.
+
+Do not implement a separate password-authentication system unless explicitly required.
+
+Do not log Firebase tokens or other credentials.
+
+---
+
+## 14. AI/ML Integration
+
+Python is a separate AI/ML service.
+
+Spring Boot is the main backend and application orchestrator.
+
+The Python service must not directly access PostgreSQL.
+
+The flow is:
+
+    Spring Boot
+        ↓
+    Prepare required data
+        ↓
+    Python AI/ML Service
+        ↓
+    Optimization / prediction result
+        ↓
+    Spring Boot
+        ↓
+    Validate and persist result
+
+Keep communication with Python isolated in an appropriate service/client component.
+
+Do not place raw AI/ML HTTP calls throughout controllers.
+
+Handle:
+
+- connection failures
+- timeouts
+- invalid responses
+- incomplete responses
+- service failures
+
+Do not persist invalid optimization results.
+
+---
+
+## 15. Scheduling Rules
+
+Scheduling is a core business domain.
+
+Before implementing scheduling logic, check the finalized schema and API.
+
+Relevant scheduling entities include:
+
+    SCHEDULING_RUNS
+    SCHEDULING_RUN_TASKS
+    SCHEDULED_TASKS
+    SCHEDULED_BLOCKS
+    SCHEDULED_BLOCK_RESOURCES
+
+Scheduling business logic belongs in services.
+
+Do not invent scheduling tables or fields based only on prototype requirements.
+
+---
+
+## 16. Conflict and Metrics Rules
+
+Conflicts are represented by the finalized conflict schema, including:
+
+    SCHEDULE_CONFLICTS
+
+Metrics are represented by:
+
+    SCHEDULE_METRICS
+    SCHEDULE_BASELINE_METRICS
+
+Metrics are generally derived from scheduling/operational data.
+
+Do not create CRUD operations for derived metrics unless defined by `docs/api.yaml`.
+
+Do not hard-code prototype/demo metrics as real application results.
+
+---
+
+## 17. Train Operations and Forecasting
+
+Before modifying train-operation functionality, check the finalized schema.
+
+The train-operation model includes:
+
+    TRAIN
+    TRAIN_TYPES
+    TRAIN_ROUTES
+    TRAIN_ROUTE_STOPS
+    TRAIN_SCHEDULES
+    TRAIN_RUNS
+    TRAIN_RUN_STOPS
+    TRAIN_RUN_TRACK_SECTIONS
+    TRAIN_RUN_BLOCK_SECTIONS
+
+Forecasting includes:
+
+    TRAFFIC_FORECASTS
+    TRAFFIC_FORECAST_ITEMS
+
+Use the actual schema and API contract rather than creating simplified replacements.
+
+---
+
+## 18. Existing Code and Reuse
+
+Before creating a new class, method, DTO, repository, or utility:
+
+1. Search the existing backend.
+2. Check whether equivalent functionality exists.
+3. Reuse existing code where appropriate.
+4. Extend existing implementations when practical.
+
+Avoid duplicate:
+
+- services
+- repositories
+- DTOs
+- utilities
+- exception handlers
+- configuration
+
+---
+
+## 19. Minimal-Change Principle
+
+When modifying existing code:
+
+- Change only what is required.
+- Preserve existing working behavior.
+- Avoid unrelated refactoring.
+- Avoid unnecessary dependency changes.
+- Do not redesign stable modules without a requirement.
+- Do not change public APIs silently.
+
+Prefer small, focused changes.
+
+---
+
+## 20. Security and Configuration
+
+Never hard-code:
+
+- database passwords
+- Firebase credentials
+- API keys
+- private keys
+- service secrets
+
+Use environment variables or appropriate Spring configuration.
+
+Do not commit secrets to Git.
+
+Do not log passwords, tokens, or credentials.
+
+---
+
+## 21. Testing and Verification
+
+After implementing a feature:
+
+1. Compile the project.
+2. Run relevant tests.
+3. Validate Flyway migrations.
+4. Validate JPA schema mapping.
+5. Verify API behavior.
+6. Verify authentication/security where relevant.
+7. Fix errors before considering the work complete.
+
+Test important business workflows, especially:
+
+- scheduling
+- conflict handling
+- maintenance coordination
+- train operations
+- AI/ML integration
+
+---
+
+## 22. Prototype Boundary
+
+The prototype may contain:
+
+- mock data
+- simulated optimization
+- demo mode
+- simulated live feeds
+- simplified models
+- prototype-specific endpoints
+
+Do not automatically copy prototype architecture into the main backend.
+
+The production-oriented backend follows:
+
+    Spring Boot
+    PostgreSQL
+    Flyway
+    Firebase Authentication
+    Python AI/ML Service
+    REST APIs
+
+The finalized database schema and API specification remain authoritative.
+
+---
+
+## 23. AI Coding Workflow
+
+When using Cursor or another AI coding agent:
+
+Before modifying code, inspect:
+
+    AGENTS.md
+    ARCHITECTURE.md
+    docs/database-schema.mmd
+    docs/api.yaml
+    relevant .cursor/rules/*.mdc
+
+For every new module:
+
+    Schema
+      ↓
+    API contract
+      ↓
+    Architecture
+      ↓
+    Existing code
+      ↓
+    Implementation
+      ↓
+    Validation
+      ↓
+    Testing
+
+The AI agent must not independently redesign the architecture.
+
+---
+
+## 24. Final Rule
+
+Always follow:
+
+    READ SCHEMA
+        ↓
+    READ API
+        ↓
+    READ ARCHITECTURE
+        ↓
+    CHECK EXISTING CODE
+        ↓
+    IMPLEMENT
+        ↓
+    VALIDATE
+        ↓
+    TEST
+
+Never develop APIs independently of the finalized database schema.
+
+Never allow Hibernate/JPA to silently modify the PostgreSQL schema.
+
+Never allow Python AI/ML code to directly access PostgreSQL.
+
+Keep Spring Boot as the central application backend and orchestrator.

@@ -1,0 +1,933 @@
+erDiagram
+
+    direction TB
+
+
+    %% =========================================================
+    %% 1. AUTHENTICATION & AUTHORIZATION
+    %% =========================================================
+
+    USERS {
+        UUID id PK
+        VARCHAR google_subject_id UK
+        VARCHAR email UK
+        VARCHAR name
+        TEXT profile_picture_url
+        VARCHAR status
+        TIMESTAMP last_login_at
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    ROLES {
+        UUID id PK
+        VARCHAR code UK
+        VARCHAR name
+        TEXT description
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    USER_ROLES {
+        UUID user_id PK, FK
+        UUID role_id PK, FK
+        TIMESTAMP assigned_at
+    }
+
+    ROLE_ENROLLMENTS {
+        UUID id PK
+        UUID user_id FK
+        UUID role_id FK
+        VARCHAR status
+        TEXT request_reason
+        TIMESTAMP requested_at
+        UUID reviewed_by FK
+        TIMESTAMP reviewed_at
+        TEXT review_reason
+    }
+
+    DEPARTMENTS {
+        UUID id PK
+        VARCHAR code UK
+        VARCHAR name
+        TEXT description
+        VARCHAR status
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    USER_DEPARTMENTS {
+        UUID user_id PK, FK
+        UUID department_id PK, FK
+        TIMESTAMP joined_at
+        TIMESTAMP left_at
+    }
+
+
+    %% =========================================================
+    %% 2. RAILWAY ORGANIZATION
+    %% =========================================================
+
+    RAILWAYS {
+        UUID id PK
+        VARCHAR code UK
+        VARCHAR name
+        TEXT description
+        VARCHAR status
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    RAILWAY_ZONES {
+        UUID id PK
+        UUID railway_id FK
+        VARCHAR code UK
+        VARCHAR name
+        TEXT description
+        VARCHAR status
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    RAILWAY_DIVISIONS {
+        UUID id PK
+        UUID zone_id FK
+        VARCHAR code UK
+        VARCHAR name
+        TEXT description
+        VARCHAR status
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+
+    %% =========================================================
+    %% 3. INFRASTRUCTURE
+    %% =========================================================
+
+    STATIONS {
+        UUID id PK
+        UUID division_id FK
+        VARCHAR code UK
+        VARCHAR name
+        DECIMAL latitude
+        DECIMAL longitude
+        VARCHAR station_type
+        VARCHAR status
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    TRACKS {
+        UUID id PK
+        UUID division_id FK
+        VARCHAR code UK
+        VARCHAR name
+        VARCHAR track_type
+        VARCHAR gauge
+        VARCHAR electrification_status
+        VARCHAR status
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    TRACK_SECTIONS {
+        UUID id PK
+        UUID track_id FK
+        UUID from_station_id FK
+        UUID to_station_id FK
+        VARCHAR code UK
+        DECIMAL length_km
+        VARCHAR status
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    BLOCK_SECTIONS {
+        UUID id PK
+        UUID division_id FK
+        UUID from_station_id FK
+        UUID to_station_id FK
+        VARCHAR code UK
+        VARCHAR block_system
+        VARCHAR status
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    BLOCK_AVAILABILITY_WINDOWS {
+        UUID id PK
+        UUID block_section_id FK
+
+        TIMESTAMP available_from
+        TIMESTAMP available_until
+
+        VARCHAR availability_type
+        VARCHAR status
+
+        TEXT restriction_reason
+
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    CORRIDORS {
+        UUID id PK
+        UUID division_id FK
+        VARCHAR code UK
+        VARCHAR name
+        TEXT description
+        VARCHAR status
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    CORRIDOR_TRACK_SECTIONS {
+        UUID corridor_id PK, FK
+        UUID track_section_id PK, FK
+        INTEGER sequence_no
+    }
+
+    CORRIDOR_BLOCK_SECTIONS {
+        UUID corridor_id PK, FK
+        UUID block_section_id PK, FK
+        INTEGER sequence_no
+    }
+
+    ASSET_TYPES {
+        UUID id PK
+        UUID department_id FK
+        VARCHAR code UK
+        VARCHAR name
+        TEXT description
+        VARCHAR status
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    ASSETS {
+        UUID id PK
+        UUID asset_type_id FK
+        UUID track_section_id FK
+        UUID station_id FK
+
+        VARCHAR code UK
+        VARCHAR name
+
+        DECIMAL location_km
+
+        DATE installation_date
+
+        VARCHAR status
+        VARCHAR criticality
+        VARCHAR condition_status
+
+        DECIMAL availability_percentage
+
+        TIMESTAMP last_maintenance_at
+        TIMESTAMP next_maintenance_due_at
+
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+
+    %% =========================================================
+    %% 4. MAINTENANCE
+    %% =========================================================
+
+    DEFECTS {
+        UUID id PK
+        UUID asset_id FK
+        UUID reported_by FK
+
+        VARCHAR defect_code UK
+        VARCHAR defect_type
+        VARCHAR severity
+        VARCHAR status
+
+        TEXT description
+
+        TIMESTAMP detected_at
+        TIMESTAMP due_at
+        TIMESTAMP resolved_at
+
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    MAINTENANCE_TYPES {
+        UUID id PK
+        UUID department_id FK
+
+        VARCHAR code UK
+        VARCHAR name
+        TEXT description
+
+        VARCHAR maintenance_category
+
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    MAINTENANCE_TASKS {
+        UUID id PK
+
+        UUID asset_id FK
+        UUID defect_id FK
+        UUID maintenance_type_id FK
+
+        UUID assigned_department_id FK
+        UUID assigned_by FK
+
+        VARCHAR task_code UK
+        VARCHAR status
+        VARCHAR priority
+
+        TEXT description
+
+        DECIMAL estimated_duration_hours
+        DECIMAL actual_duration_hours
+
+        TIMESTAMP requested_at
+        TIMESTAMP scheduled_at
+        TIMESTAMP completed_at
+        TIMESTAMP deadline_at
+
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    MAINTENANCE_RESOURCES {
+        UUID id PK
+        UUID department_id FK
+
+        VARCHAR code UK
+        VARCHAR name
+        VARCHAR resource_type
+
+        INTEGER capacity
+        VARCHAR status
+
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    MAINTENANCE_TASK_RESOURCES {
+        UUID maintenance_task_id PK, FK
+        UUID resource_id PK, FK
+
+        INTEGER required_quantity
+    }
+
+    RESOURCE_AVAILABILITY {
+        UUID id PK
+        UUID resource_id FK
+
+        TIMESTAMP available_from
+        TIMESTAMP available_until
+
+        INTEGER available_quantity
+
+        VARCHAR status
+
+        TIMESTAMP created_at
+    }
+
+    MAINTENANCE_TASK_BLOCK_REQUIREMENTS {
+        UUID maintenance_task_id PK, FK
+        UUID block_section_id PK, FK
+
+        VARCHAR requirement_type
+
+        BOOLEAN requires_full_block
+        BOOLEAN requires_power_block
+        BOOLEAN requires_signal_block
+        BOOLEAN requires_speed_restriction
+
+        INTEGER safety_buffer_minutes
+
+        DECIMAL minimum_duration_hours
+
+        TIMESTAMP created_at
+    }
+
+
+    %% =========================================================
+    %% 5. TRAIN & OPERATIONS
+    %% =========================================================
+
+    TRAIN_TYPES {
+        UUID id PK
+
+        VARCHAR code UK
+        VARCHAR name
+        TEXT description
+
+        VARCHAR category
+        VARCHAR priority_class
+
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    TRAINS {
+        UUID id PK
+        UUID train_type_id FK
+
+        VARCHAR train_number UK
+        VARCHAR train_name
+
+        VARCHAR operator
+        VARCHAR status
+
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    TRAIN_ROUTES {
+        UUID id PK
+        UUID train_id FK
+
+        VARCHAR route_code UK
+        VARCHAR name
+
+        UUID origin_station_id FK
+        UUID destination_station_id FK
+
+        INTEGER total_stations
+
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    TRAIN_ROUTE_STOPS {
+        UUID id PK
+        UUID train_route_id FK
+        UUID station_id FK
+
+        INTEGER sequence_no
+
+        INTEGER arrival_offset_minutes
+        INTEGER departure_offset_minutes
+
+        TIMESTAMP created_at
+    }
+
+    TRAIN_SCHEDULES {
+        UUID id PK
+
+        UUID train_id FK
+        UUID train_route_id FK
+
+        VARCHAR schedule_code UK
+
+        DATE valid_from
+        DATE valid_until
+
+        VARCHAR operating_days
+
+        TIME departure_time
+        TIME arrival_time
+
+        VARCHAR status
+
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    TRAIN_RUNS {
+        UUID id PK
+
+        UUID train_id FK
+        UUID train_route_id FK
+        UUID train_schedule_id FK
+
+        VARCHAR run_code UK
+
+        DATE operation_date
+
+        VARCHAR status
+
+        TIMESTAMP planned_start_at
+        TIMESTAMP planned_end_at
+
+        TIMESTAMP actual_start_at
+        TIMESTAMP actual_end_at
+
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    TRAIN_RUN_STOPS {
+        UUID id PK
+
+        UUID train_run_id FK
+        UUID station_id FK
+
+        INTEGER sequence_no
+
+        TIMESTAMP planned_arrival_at
+        TIMESTAMP planned_departure_at
+
+        TIMESTAMP actual_arrival_at
+        TIMESTAMP actual_departure_at
+    }
+
+    TRAIN_RUN_TRACK_SECTIONS {
+        UUID train_run_id PK, FK
+        UUID track_section_id PK, FK
+
+        INTEGER sequence_no
+
+        TIMESTAMP planned_entry_at
+        TIMESTAMP planned_exit_at
+    }
+
+    TRAIN_RUN_BLOCK_SECTIONS {
+        UUID train_run_id PK, FK
+        UUID block_section_id PK, FK
+
+        INTEGER sequence_no
+
+        TIMESTAMP planned_entry_at
+        TIMESTAMP planned_exit_at
+    }
+
+
+    %% =========================================================
+    %% 6. TRAFFIC / GOODS FORECAST
+    %% =========================================================
+
+    TRAFFIC_FORECASTS {
+        UUID id PK
+
+        UUID division_id FK
+
+        VARCHAR forecast_type
+
+        DATE forecast_date
+
+        TIMESTAMP horizon_start_at
+        TIMESTAMP horizon_end_at
+
+        VARCHAR status
+
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    TRAFFIC_FORECAST_ITEMS {
+        UUID id PK
+
+        UUID forecast_id FK
+        UUID block_section_id FK
+
+        TIMESTAMP time_window_start
+        TIMESTAMP time_window_end
+
+        VARCHAR train_category
+
+        INTEGER expected_train_count
+
+        DECIMAL probability
+
+        INTEGER expected_passenger_trains
+        INTEGER expected_goods_trains
+
+        TIMESTAMP created_at
+    }
+
+
+    %% =========================================================
+    %% 7. SCHEDULING / BLOCK PLANNING
+    %% =========================================================
+
+    SCHEDULING_RUNS {
+        UUID id PK
+        UUID created_by FK
+
+        VARCHAR run_code UK
+
+        VARCHAR algorithm_type
+        VARCHAR status
+
+        TIMESTAMP planning_start_at
+        TIMESTAMP planning_end_at
+
+        TIMESTAMP started_at
+        TIMESTAMP completed_at
+
+        TEXT objective_description
+        JSONB objective_weights
+
+        INTEGER total_tasks_considered
+        INTEGER total_tasks_scheduled
+        INTEGER total_tasks_unscheduled
+
+        TEXT error_message
+
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    SCHEDULING_RUN_TASKS {
+        UUID scheduling_run_id PK, FK
+        UUID maintenance_task_id PK, FK
+
+        VARCHAR consideration_status
+        VARCHAR unscheduled_reason
+
+        DECIMAL predicted_duration_hours
+        DECIMAL effective_duration_hours
+
+        DECIMAL priority_score
+        DECIMAL risk_score
+
+        TIMESTAMP created_at
+    }
+
+    SCHEDULED_TASKS {
+        UUID id PK
+
+        UUID scheduling_run_id FK
+        UUID maintenance_task_id FK
+
+        VARCHAR status
+
+        TIMESTAMP planned_start_at
+        TIMESTAMP planned_end_at
+
+        DECIMAL planned_duration_hours
+
+        DECIMAL objective_contribution
+
+        TEXT scheduling_reason
+
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    SCHEDULED_BLOCKS {
+        UUID id PK
+
+        UUID scheduling_run_id FK
+        UUID scheduled_task_id FK
+        UUID block_section_id FK
+
+        VARCHAR block_code
+        VARCHAR status
+
+        TIMESTAMP planned_start_at
+        TIMESTAMP planned_end_at
+
+        INTEGER duration_minutes
+
+        BOOLEAN full_block
+        BOOLEAN power_disconnection
+
+        DECIMAL train_impact_score
+        DECIMAL asset_impact_score
+
+        TEXT scheduling_reason
+
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    SCHEDULED_BLOCK_RESOURCES {
+        UUID scheduled_block_id PK, FK
+        UUID resource_id PK, FK
+
+        INTEGER quantity_allocated
+
+        TIMESTAMP allocated_start_at
+        TIMESTAMP allocated_end_at
+    }
+
+    SCHEDULE_CONFLICTS {
+        UUID id PK
+
+        UUID scheduling_run_id FK
+
+        UUID scheduled_task_id FK
+        UUID scheduled_block_id FK
+
+        UUID train_run_id FK
+        UUID resource_id FK
+
+        UUID track_section_id FK
+        UUID block_section_id FK
+
+        VARCHAR conflict_type
+        VARCHAR severity
+        VARCHAR status
+
+        TEXT description
+
+        INTEGER conflict_duration_minutes
+
+        TIMESTAMP conflict_start_at
+        TIMESTAMP conflict_end_at
+
+        TIMESTAMP created_at
+        TIMESTAMP resolved_at
+    }
+
+
+    %% =========================================================
+    %% 8. SCHEDULING METRICS
+    %% =========================================================
+
+    SCHEDULE_METRICS {
+        UUID id PK
+        UUID scheduling_run_id FK
+
+        INTEGER total_tasks
+        INTEGER scheduled_tasks
+        INTEGER unscheduled_tasks
+
+        INTEGER total_blocks
+        INTEGER total_block_hours
+
+        INTEGER train_conflicts
+        INTEGER resource_conflicts
+        INTEGER safety_conflicts
+
+        DECIMAL estimated_train_delay_minutes
+
+        DECIMAL estimated_asset_downtime_hours
+        DECIMAL estimated_asset_availability_percentage
+
+        DECIMAL resource_utilization_percentage
+
+        DECIMAL maintenance_completion_percentage
+
+        DECIMAL total_objective_score
+
+        TIMESTAMP calculated_at
+    }
+
+    SCHEDULE_BASELINE_METRICS {
+        UUID id PK
+        UUID scheduling_run_id FK
+
+        INTEGER total_tasks
+        INTEGER tasks_without_optimized_scheduling
+
+        INTEGER estimated_block_hours
+
+        DECIMAL estimated_train_delay_minutes
+        DECIMAL estimated_asset_downtime_hours
+        DECIMAL estimated_asset_availability_percentage
+
+        DECIMAL resource_utilization_percentage
+
+        TIMESTAMP calculated_at
+    }
+
+
+    %% =========================================================
+    %% 9. ML PREDICTIONS
+    %% =========================================================
+
+    SCHEDULING_PREDICTIONS {
+        UUID id PK
+
+        UUID scheduling_run_id FK
+        UUID maintenance_task_id FK
+
+        VARCHAR prediction_type
+
+        DECIMAL predicted_value
+
+        VARCHAR model_name
+        VARCHAR model_version
+
+        DECIMAL confidence_score
+
+        JSONB input_features
+
+        TIMESTAMP predicted_at
+    }
+
+
+    %% =========================================================
+    %% RELATIONSHIPS
+    %% =========================================================
+
+
+    %% ---------------- AUTH ----------------
+
+    USERS ||--o{ USER_ROLES : "has"
+    ROLES ||--o{ USER_ROLES : "assigned to"
+
+    USERS ||--o{ ROLE_ENROLLMENTS : "requests"
+    ROLES ||--o{ ROLE_ENROLLMENTS : "requested role"
+
+    USERS ||--o{ ROLE_ENROLLMENTS : "reviews"
+
+    USERS ||--o{ USER_DEPARTMENTS : "belongs to"
+    DEPARTMENTS ||--o{ USER_DEPARTMENTS : "has members"
+
+
+    %% ---------------- ORGANIZATION ----------------
+
+    RAILWAYS ||--o{ RAILWAY_ZONES : "has"
+    RAILWAY_ZONES ||--o{ RAILWAY_DIVISIONS : "has"
+
+    RAILWAY_DIVISIONS ||--o{ STATIONS : "contains"
+    RAILWAY_DIVISIONS ||--o{ TRACKS : "contains"
+    RAILWAY_DIVISIONS ||--o{ BLOCK_SECTIONS : "contains"
+    RAILWAY_DIVISIONS ||--o{ CORRIDORS : "contains"
+
+
+    %% ---------------- INFRASTRUCTURE ----------------
+
+    TRACKS ||--o{ TRACK_SECTIONS : "divided into"
+
+    STATIONS ||--o{ TRACK_SECTIONS : "starts at"
+    STATIONS ||--o{ TRACK_SECTIONS : "ends at"
+
+    STATIONS ||--o{ BLOCK_SECTIONS : "starts at"
+    STATIONS ||--o{ BLOCK_SECTIONS : "ends at"
+
+    BLOCK_SECTIONS ||--o{ BLOCK_AVAILABILITY_WINDOWS : "has"
+
+    CORRIDORS ||--o{ CORRIDOR_TRACK_SECTIONS : "contains"
+    TRACK_SECTIONS ||--o{ CORRIDOR_TRACK_SECTIONS : "belongs to"
+
+    CORRIDORS ||--o{ CORRIDOR_BLOCK_SECTIONS : "contains"
+    BLOCK_SECTIONS ||--o{ CORRIDOR_BLOCK_SECTIONS : "belongs to"
+
+    DEPARTMENTS ||--o{ ASSET_TYPES : "owns"
+    ASSET_TYPES ||--o{ ASSETS : "classifies"
+
+    TRACK_SECTIONS ||--o{ ASSETS : "contains"
+    STATIONS ||--o{ ASSETS : "hosts"
+
+
+    %% ---------------- MAINTENANCE ----------------
+
+    ASSETS ||--o{ DEFECTS : "has"
+    USERS ||--o{ DEFECTS : "reports"
+
+    DEPARTMENTS ||--o{ MAINTENANCE_TYPES : "defines"
+
+    ASSETS ||--o{ MAINTENANCE_TASKS : "requires"
+
+    DEFECTS ||--o{ MAINTENANCE_TASKS : "may generate"
+
+    MAINTENANCE_TYPES ||--o{ MAINTENANCE_TASKS : "classifies"
+
+    DEPARTMENTS ||--o{ MAINTENANCE_TASKS : "handles"
+
+    USERS ||--o{ MAINTENANCE_TASKS : "assigns"
+
+    DEPARTMENTS ||--o{ MAINTENANCE_RESOURCES : "owns"
+
+    MAINTENANCE_TASKS ||--o{ MAINTENANCE_TASK_RESOURCES : "requires"
+
+    MAINTENANCE_RESOURCES ||--o{ MAINTENANCE_TASK_RESOURCES : "required by"
+
+    MAINTENANCE_RESOURCES ||--o{ RESOURCE_AVAILABILITY : "has"
+
+    MAINTENANCE_TASKS ||--o{ MAINTENANCE_TASK_BLOCK_REQUIREMENTS : "requires"
+
+    BLOCK_SECTIONS ||--o{ MAINTENANCE_TASK_BLOCK_REQUIREMENTS : "required for"
+
+
+    %% ---------------- TRAIN OPERATIONS ----------------
+
+    TRAIN_TYPES ||--o{ TRAINS : "classifies"
+
+    TRAINS ||--o{ TRAIN_ROUTES : "operates"
+
+    TRAIN_ROUTES ||--o{ TRAIN_ROUTE_STOPS : "contains"
+
+    STATIONS ||--o{ TRAIN_ROUTE_STOPS : "serves"
+
+    TRAINS ||--o{ TRAIN_SCHEDULES : "has"
+
+    TRAIN_ROUTES ||--o{ TRAIN_SCHEDULES : "uses"
+
+    TRAINS ||--o{ TRAIN_RUNS : "runs"
+
+    TRAIN_ROUTES ||--o{ TRAIN_RUNS : "uses"
+
+    TRAIN_SCHEDULES ||--o{ TRAIN_RUNS : "generates"
+
+    TRAIN_RUNS ||--o{ TRAIN_RUN_STOPS : "has"
+
+    STATIONS ||--o{ TRAIN_RUN_STOPS : "visited by"
+
+    TRAIN_RUNS ||--o{ TRAIN_RUN_TRACK_SECTIONS : "uses"
+
+    TRACK_SECTIONS ||--o{ TRAIN_RUN_TRACK_SECTIONS : "used by"
+
+    TRAIN_RUNS ||--o{ TRAIN_RUN_BLOCK_SECTIONS : "occupies"
+
+    BLOCK_SECTIONS ||--o{ TRAIN_RUN_BLOCK_SECTIONS : "occupied by"
+
+
+    %% ---------------- TRAFFIC ----------------
+
+    RAILWAY_DIVISIONS ||--o{ TRAFFIC_FORECASTS : "has"
+
+    TRAFFIC_FORECASTS ||--o{ TRAFFIC_FORECAST_ITEMS : "contains"
+
+    BLOCK_SECTIONS ||--o{ TRAFFIC_FORECAST_ITEMS : "forecast for"
+
+
+    %% ---------------- SCHEDULING ----------------
+
+    USERS ||--o{ SCHEDULING_RUNS : "creates"
+
+    SCHEDULING_RUNS ||--o{ SCHEDULING_RUN_TASKS : "evaluates"
+
+    MAINTENANCE_TASKS ||--o{ SCHEDULING_RUN_TASKS : "considered in"
+
+    SCHEDULING_RUNS ||--o{ SCHEDULED_TASKS : "produces"
+
+    MAINTENANCE_TASKS ||--o{ SCHEDULED_TASKS : "scheduled as"
+
+    SCHEDULED_TASKS ||--o{ SCHEDULED_BLOCKS : "uses"
+
+    SCHEDULING_RUNS ||--o{ SCHEDULED_BLOCKS : "contains"
+
+    BLOCK_SECTIONS ||--o{ SCHEDULED_BLOCKS : "blocked by"
+
+    SCHEDULED_BLOCKS ||--o{ SCHEDULED_BLOCK_RESOURCES : "allocates"
+
+    MAINTENANCE_RESOURCES ||--o{ SCHEDULED_BLOCK_RESOURCES : "allocated to"
+
+
+    %% ---------------- CONFLICTS ----------------
+
+    SCHEDULING_RUNS ||--o{ SCHEDULE_CONFLICTS : "detects"
+
+    SCHEDULED_TASKS ||--o{ SCHEDULE_CONFLICTS : "has"
+
+    SCHEDULED_BLOCKS ||--o{ SCHEDULE_CONFLICTS : "has"
+
+    TRAIN_RUNS ||--o{ SCHEDULE_CONFLICTS : "conflicts with"
+
+    MAINTENANCE_RESOURCES ||--o{ SCHEDULE_CONFLICTS : "conflicts with"
+
+    TRACK_SECTIONS ||--o{ SCHEDULE_CONFLICTS : "conflicts on"
+
+    BLOCK_SECTIONS ||--o{ SCHEDULE_CONFLICTS : "conflicts on"
+
+
+    %% ---------------- METRICS ----------------
+
+    SCHEDULING_RUNS ||--o| SCHEDULE_METRICS : "has"
+
+    SCHEDULING_RUNS ||--o| SCHEDULE_BASELINE_METRICS : "has"
+
+
+    %% ---------------- ML ----------------
+
+    SCHEDULING_RUNS ||--o{ SCHEDULING_PREDICTIONS : "uses"
+
+    MAINTENANCE_TASKS ||--o{ SCHEDULING_PREDICTIONS : "predicted for"

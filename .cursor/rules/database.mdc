@@ -1,0 +1,625 @@
+---
+description: Database, JPA, PostgreSQL, and Flyway rules for the RailOpt-AI backend
+
+globs:
+  - "src/**/entity/**/*.java"
+  - "src/**/repository/**/*.java"
+  - "src/main/resources/db/migration/**/*.sql"
+  - "src/main/resources/**/*.properties"
+  - "src/main/resources/**/*.yml"
+  - "src/main/resources/**/*.yaml"
+
+alwaysApply: false
+---
+
+# RailOpt-AI Database Rules
+
+## 1. Core Principle
+
+PostgreSQL is the primary application database.
+
+The finalized database schema is:
+
+    docs/database-schema.mmd
+
+This file is the source of truth for:
+
+- tables
+- columns
+- primary keys
+- foreign keys
+- relationships
+- database structure
+
+Never invent database structures when they are already defined in the schema.
+
+---
+
+## 2. Schema-First Rule
+
+Before creating or modifying any database-related code:
+
+1. Read `docs/database-schema.mmd`.
+2. Identify the relevant table(s).
+3. Check all columns.
+4. Check primary keys.
+5. Check foreign keys.
+6. Check relationships.
+7. Check data types and nullable fields.
+8. Inspect existing entities and repositories.
+9. Only then implement the change.
+
+Do not design entities independently and then try to fit them into the schema.
+
+---
+
+## 3. Flyway
+
+Flyway is responsible for PostgreSQL schema creation and evolution.
+
+All schema changes must be version-controlled through Flyway migrations.
+
+Migration location:
+
+    src/main/resources/db/migration/
+
+Example:
+
+    V1__initial_schema.sql
+    V2__add_forecasting_tables.sql
+    V3__add_scheduling_tables.sql
+
+Use sequential, descriptive migration names.
+
+Do not modify an already-applied migration to change an existing database structure.
+
+Create a new migration instead.
+
+---
+
+## 4. Hibernate / JPA Schema Management
+
+Hibernate/JPA is responsible for:
+
+- entity mapping
+- persistence
+- database interaction
+- schema validation
+
+Hibernate/JPA must not manage schema creation or modification.
+
+Use:
+
+    spring.jpa.hibernate.ddl-auto=validate
+
+Do not use:
+
+    ddl-auto=update
+    ddl-auto=create
+    ddl-auto=create-drop
+
+The intended relationship is:
+
+    database-schema.mmd
+            ↓
+       Flyway Migration
+            ↓
+        PostgreSQL
+            ↑
+         JPA Entity
+
+---
+
+## 5. Schema Change Workflow
+
+When a database change is required:
+
+    1. Update database design
+            ↓
+    2. Update docs/database-schema.mmd
+            ↓
+    3. Create Flyway migration
+            ↓
+    4. Update JPA entities
+            ↓
+    5. Update repositories if required
+            ↓
+    6. Update affected services/APIs
+            ↓
+    7. Validate
+            ↓
+    8. Test
+
+Do not change only the Java entity and assume the database will update automatically.
+
+---
+
+## 6. Entity Rules
+
+JPA entities must reflect the finalized database schema.
+
+For every entity:
+
+- Map the correct table.
+- Map the correct columns.
+- Use the correct primary key.
+- Map required foreign keys.
+- Use appropriate Java data types.
+- Respect nullable/non-nullable fields.
+- Do not add unsupported database fields.
+
+Example:
+
+    @Entity
+    @Table(name = "trains")
+    public class Train {
+        ...
+    }
+
+Use explicit table/column mappings when required by the existing schema.
+
+---
+
+## 7. Primary Keys
+
+Use the primary key defined by the database schema.
+
+Do not change primary-key strategy without an explicit schema decision.
+
+Do not introduce additional identifiers simply for convenience.
+
+The JPA identifier must correspond to the actual database primary key.
+
+---
+
+## 8. Foreign Keys and Relationships
+
+Foreign-key relationships must follow `docs/database-schema.mmd`.
+
+Do not create relationships merely because two entities appear conceptually related.
+
+Only map relationships supported by the actual database design.
+
+Use appropriate JPA annotations such as:
+
+    @ManyToOne
+    @OneToMany
+    @OneToOne
+    @ManyToMany
+
+Prefer lazy loading unless eager loading is explicitly required.
+
+Avoid unnecessary bidirectional relationships.
+
+---
+
+## 9. Relationship Loading
+
+Do not use eager relationships by default.
+
+Prefer:
+
+    FetchType.LAZY
+
+when appropriate.
+
+Be aware of:
+
+- N+1 queries
+- unnecessary joins
+- serialization of large object graphs
+- circular relationships
+
+DTOs should normally be used to control what is returned through APIs.
+
+---
+
+## 10. Column Mapping
+
+Column names must match the database schema.
+
+Do not rename database columns merely to follow personal Java naming preferences.
+
+For example:
+
+    database:
+    block_section_id
+
+may map to:
+
+    private Long blockSectionId;
+
+but the JPA column mapping must correctly reference:
+
+    block_section_id
+
+Use explicit `@Column` mappings when necessary.
+
+---
+
+## 11. Data Types
+
+Use Java types appropriate for the PostgreSQL column types.
+
+Examples:
+
+    PostgreSQL INTEGER / BIGINT
+        → Integer / Long
+
+    PostgreSQL BOOLEAN
+        → Boolean
+
+    PostgreSQL VARCHAR / TEXT
+        → String
+
+    PostgreSQL TIMESTAMP
+        → appropriate Java time type
+
+    PostgreSQL DATE
+        → LocalDate
+
+    PostgreSQL TIME
+        → LocalTime
+
+Prefer Java's modern date/time API.
+
+Avoid legacy date types unless the existing project requires them.
+
+---
+
+## 12. Nullable Fields
+
+Respect the schema's nullability.
+
+If a database field is nullable, do not automatically make it mandatory in the API or entity.
+
+If a field is non-nullable, ensure the application supplies a valid value before persistence.
+
+Database constraints should not be replaced by assumptions in application code.
+
+---
+
+## 13. Database Metadata
+
+Database fields such as:
+
+    created_at
+    updated_at
+
+must follow the finalized schema.
+
+They may exist in entities when required for persistence.
+
+However, they must not automatically be exposed in API DTOs.
+
+Expose metadata only when the API contract requires it.
+
+---
+
+## 14. Repositories
+
+Use Spring Data JPA repositories where appropriate.
+
+Example:
+
+    public interface TrainRepository
+            extends JpaRepository<Train, Long> {
+    }
+
+Repositories should contain persistence/query logic only.
+
+Do not place business decisions inside repositories.
+
+Avoid creating repository methods that are not required.
+
+---
+
+## 15. Query Rules
+
+Prefer Spring Data derived query methods when they remain readable.
+
+Example:
+
+    findByDivisionId(Long divisionId)
+
+Use custom JPQL/native SQL only when necessary.
+
+Before writing a custom query:
+
+1. Check whether Spring Data can express it.
+2. Check whether an existing repository method can be reused.
+3. Keep the query focused on the actual requirement.
+
+Do not add speculative queries.
+
+---
+
+## 16. Database Access Boundary
+
+Database access follows:
+
+    Controller
+        ↓
+    Service
+        ↓
+    Repository
+        ↓
+    PostgreSQL
+
+Do not access repositories directly from controllers.
+
+Do not put raw database access inside controllers.
+
+Do not allow the Python AI/ML service to directly access PostgreSQL.
+
+---
+
+## 17. Transactions
+
+Transactions should normally be handled at the service layer.
+
+Use `@Transactional` when multiple database operations must succeed or fail together.
+
+Examples:
+
+- creating a scheduling run with related records
+- creating a scheduled block and its resources
+- updating multiple related scheduling records
+- persisting an optimization result
+
+Do not add transactions to every method automatically.
+
+---
+
+## 18. Delete Operations
+
+Follow the database relationships and API contract when deleting records.
+
+Before implementing deletion:
+
+1. Check foreign-key dependencies.
+2. Check whether dependent records exist.
+3. Check API behavior.
+4. Check whether deletion is actually allowed.
+
+Do not introduce cascading deletes without an explicit requirement.
+
+Never use destructive database operations casually.
+
+---
+
+## 19. Database Constraints
+
+Respect database constraints defined by the schema.
+
+Important constraints include:
+
+- primary keys
+- foreign keys
+- unique constraints
+- not-null constraints
+- check constraints
+
+Do not duplicate every database constraint in Java unless application-level validation is useful.
+
+Database constraints remain authoritative at the persistence level.
+
+---
+
+## 20. Domain Tables
+
+The finalized database contains domains including:
+
+    Organization
+    Infrastructure
+    Assets
+    Maintenance
+    Train Operations
+    Forecasting
+    Scheduling
+    Conflicts
+    Metrics
+
+Relevant scheduling tables include:
+
+    SCHEDULING_RUNS
+    SCHEDULING_RUN_TASKS
+    SCHEDULED_TASKS
+    SCHEDULED_BLOCKS
+    SCHEDULED_BLOCK_RESOURCES
+
+Conflict data includes:
+
+    SCHEDULE_CONFLICTS
+
+Metrics include:
+
+    SCHEDULE_METRICS
+    SCHEDULE_BASELINE_METRICS
+
+Always verify the exact structure in:
+
+    docs/database-schema.mmd
+
+before implementing any of these domains.
+
+---
+
+## 21. Train Operations
+
+The finalized train-operation model includes:
+
+    TRAIN_TYPES
+    TRAINS
+    TRAIN_ROUTES
+    TRAIN_ROUTE_STOPS
+    TRAIN_SCHEDULES
+    TRAIN_RUNS
+    TRAIN_RUN_STOPS
+    TRAIN_RUN_TRACK_SECTIONS
+    TRAIN_RUN_BLOCK_SECTIONS
+
+Do not simplify or redesign these relationships without an explicit schema change.
+
+---
+
+## 22. Forecasting
+
+Forecasting includes:
+
+    TRAFFIC_FORECASTS
+    TRAFFIC_FORECAST_ITEMS
+
+Forecasting data may be consumed by scheduling and AI/ML workflows.
+
+Do not create additional forecasting tables unless the database schema is explicitly extended.
+
+---
+
+## 23. Scheduling
+
+Scheduling is a core database domain.
+
+The scheduling implementation must use the finalized scheduling tables.
+
+Do not create temporary duplicate scheduling tables for convenience.
+
+Optimization results should be persisted through the existing scheduling structures unless a new database design explicitly requires otherwise.
+
+---
+
+## 24. Conflicts
+
+Conflict persistence follows the finalized schema.
+
+The primary conflict table is:
+
+    SCHEDULE_CONFLICTS
+
+Do not create separate conflict tables for every conflict type unless explicitly defined by the database design.
+
+Conflict types should be represented according to the existing schema.
+
+---
+
+## 25. Metrics
+
+Metrics are derived from scheduling and operational information.
+
+The finalized metric tables are:
+
+    SCHEDULE_METRICS
+    SCHEDULE_BASELINE_METRICS
+
+Do not treat derived metrics as arbitrary user-entered database records unless the schema/API explicitly requires it.
+
+Do not hard-code prototype metrics into database records.
+
+---
+
+## 26. AI/ML Database Boundary
+
+Python AI/ML must not directly connect to PostgreSQL.
+
+The correct flow is:
+
+    Spring Boot
+        ↓
+    Load data from PostgreSQL
+        ↓
+    Python AI/ML
+        ↓
+    Result
+        ↓
+    Spring Boot
+        ↓
+    Validate
+        ↓
+    Persist to PostgreSQL
+
+Do not create database credentials or database clients inside the Python AI/ML integration merely for convenience.
+
+---
+
+## 27. Prototype Boundary
+
+Prototype database models must not automatically become production backend tables.
+
+The prototype may contain simplified or simulated entities.
+
+Before adding any prototype-inspired table:
+
+1. Check the finalized database schema.
+2. Check the actual application requirement.
+3. Confirm the table is necessary.
+4. Update the database design.
+5. Create a Flyway migration.
+
+Do not copy prototype schemas blindly.
+
+---
+
+## 28. Migration Safety
+
+Flyway migrations must be safe and deterministic.
+
+Avoid destructive operations unless explicitly required.
+
+Before applying a migration:
+
+- verify table/column names
+- verify foreign keys
+- verify data types
+- verify existing data implications
+- verify migration ordering
+
+Do not modify previously executed migrations.
+
+---
+
+## 29. Database Documentation
+
+Whenever a schema change is approved, keep these synchronized:
+
+    docs/database-schema.mmd
+    Flyway migration
+    JPA entities
+    repositories
+    affected services
+    affected APIs
+
+A database change is not complete if only the Java entity was changed.
+
+---
+
+## 30. Final Database Rule
+
+Always follow:
+
+    READ DATABASE SCHEMA
+            ↓
+    UNDERSTAND RELATIONSHIPS
+            ↓
+    CHECK EXISTING ENTITIES
+            ↓
+    UPDATE SCHEMA DESIGN IF REQUIRED
+            ↓
+    CREATE FLYWAY MIGRATION
+            ↓
+    UPDATE JPA MAPPING
+            ↓
+    UPDATE REPOSITORY
+            ↓
+    UPDATE SERVICE/API IF REQUIRED
+            ↓
+    VALIDATE
+            ↓
+    TEST
+
+Never use Hibernate/JPA to silently modify the database.
+
+Never invent tables or columns.
+
+Never let Python AI/ML access PostgreSQL directly.
+
+The finalized `docs/database-schema.mmd` and Flyway migration history together define the database structure.

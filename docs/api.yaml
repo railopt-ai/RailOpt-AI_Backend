@@ -1,0 +1,7579 @@
+openapi: 3.0.3
+info:
+  title: RailOpt-AI API
+  version: 1.0.0
+  description: |
+    API documentation for RailOpt-A
+
+    RailOpt-AI is an AI-powered automatic block planning system
+    designed to maximize asset availability for train operations
+    on Indian Railways.
+
+    ## Authentication
+
+    Authentication is handled using **Firebase Authentication**.
+
+    Frontend applications authenticate users using the Firebase SDK.
+    After successful authentication, the frontend must send the
+    Firebase **ID Token** with every protected API request.
+
+    ### Authorization Header
+
+    ```
+    Authorization: Bearer <firebase-id-token>
+    ```
+
+    The Spring Boot backend verifies the Firebase ID Token and
+    extracts the Firebase UID to identify the authenticated user.
+
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/student-79e-e41/RailOpt-AI-V1/1.0.0
+  - url: http://localhost:8080
+    description: Local development server
+
+components:
+
+  securitySchemes:
+
+    firebaseAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Firebase Authentication ID Token.
+
+        The frontend must send the token using:
+        Authorization: Bearer <firebase-id-token>
+
+  schemas:
+
+    ErrorResponse:
+      type: object
+      required:
+        - status
+        - error
+        - message
+      properties:
+        status:
+          type: integer
+          description: HTTP status code
+          example: 400
+        error:
+          type: string
+          description: Application error code
+          example: BAD_REQUEST
+        message:
+          type: string
+          description: Human-readable error message
+          example: Invalid request data
+        path:
+          type: string
+          description: API endpoint where the error occurred
+          example: /user
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: RailOpt-AI user identifier
+          example: "USR-1024"
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "planner@railway.gov.in"
+        name:
+          type: string
+          description: User's display name
+          example: "Rahul Sharma"
+        phone:
+          type: string
+          nullable: true
+          description: User's contact number
+          example: "9876543210"
+        role:
+          type: string
+          nullable: true
+          description: Role assigned to the user in RailOpt-AI
+          example: "PLANNER"
+        department_id:
+          type: string
+          nullable: true
+          description: Department associated with the user
+          example: "DEP-12"
+        status:
+          type: string
+          description: Current status of the user account
+          example: "ACTIVE"
+
+    CreateUserRequest:
+      type: object
+      required:
+        - email
+        - name
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email associated with the authenticated Firebase account
+          example: "planner@railway.gov.in"
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          description: User's display name
+          example: "Rahul Sharma"
+        phone:
+          type: string
+          description: User's contact number
+          example: "9876543210"
+        role:
+          type: string
+          description: Initial RailOpt-AI role assigned to the user
+          example: "PLANNER"
+        department_id:
+          type: string
+          description: Department assigned to the user
+          example: "DEP-12"
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          description: User's display name
+          example: "Rahul Sharma"
+        phone:
+          type: string
+          description: User's contact number
+          example: "9876543210"
+
+    AdminUpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          description: User's display name
+          example: "Rahul Sharma"
+        phone:
+          type: string
+          description: User's contact number
+          example: "9876543210"
+        role:
+          type: string
+          description: Role assigned to the user
+          example: "PLANNER"
+        department_id:
+          type: string
+          description: Department assigned to the user
+          example: "DEP-12"
+
+    UpdateUserRoleRequest:
+      type: object
+      required:
+        - role
+      properties:
+        role:
+          type: string
+          description: New role assigned to the user
+          example: "PLANNER"
+
+    UpdateUserDepartmentRequest:
+      type: object
+      required:
+        - department_id
+      properties:
+        department_id:
+          type: string
+          description: Department to which the user is assigned
+          example: "DEP-12"
+
+    UpdateUserStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          description: New status of the user account
+          example: "ACTIVE"
+
+    UserListResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserResponse"
+        total:
+          type: integer
+          description: Total number of users matching the filters
+          example: 25
+        page:
+          type: integer
+          description: Current page number
+          example: 0
+        size:
+          type: integer
+          description: Number of users requested per page
+          example: 20
+
+security:
+  - firebaseAuth: []
+
+tags:
+  - name: System
+    description: System and health-related operations
+  - name: User
+    description: Authenticated user and user profile operations
+  - name: Organization
+    description: Railway organizational structure
+  - name: Infrastructure
+    description: Railway infrastructure and track-related operations
+  - name: Assets
+    description: Railway asset management
+  - name: Maintenance
+    description: Maintenance task and maintenance-related operations
+  - name: Train Operations
+    description: Train, route, schedule and operational data
+  - name: Forecasting
+    description: Traffic and operational forecasting
+  - name: Scheduling
+    description: Automatic block planning and scheduling operations
+  - name: Conflicts
+    description: Schedule and block conflict detection
+  - name: Metrics
+    description: Scheduling performance and availability metrics
+  - name: AI/ML
+    description: Internal AI and machine learning service operations
+
+paths:
+
+  /health:
+    get:
+      tags:
+        - System
+      summary: Check API health
+      description: |
+        Returns the current health status of the RailOpt-AI backend.
+
+        This endpoint is publicly accessible and does not require
+        Firebase authentication.
+      security: []
+      responses:
+        "200":
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    example: UP
+        "503":
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+  #                      USER
+  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+  # =====================================================
+  # USER MODULE
+  # =====================================================
+
+  /user/me:
+
+    get:
+      tags:
+        - User
+
+      summary: Get current authenticated user
+
+      description: |
+        Returns the RailOpt-AI user associated with the currently
+        authenticated Firebase account.
+
+        The Firebase ID Token is verified by the backend.
+        The Firebase UID is obtained from the verified token and
+        used to identify the corresponding RailOpt-AI user.
+
+        The client does not provide a user ID.
+
+      responses:
+
+        "200":
+          description: Current user retrieved successfully
+          content:
+            application/json:
+              example:
+                id: "USR-1024"
+                email: "planner@railway.gov.in"
+                name: "Rahul Sharma"
+                role: "PLANNER"
+                department_id: "DEP-12"
+                status: "ACTIVE"
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - User account is inactive or suspended
+
+        "404":
+          description: RailOpt-AI user record not found
+
+
+    patch:
+      tags:
+        - User
+
+      summary: Update current user's profile
+
+      description: |
+        Updates editable profile information of the currently
+        authenticated user.
+
+        The user's identity is obtained from the verified Firebase
+        ID Token.
+
+        System-controlled information such as user ID, Firebase UID,
+        role, department and account status cannot be changed through
+        this endpoint.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              name: "Rahul Sharma"
+
+      responses:
+
+        "200":
+          description: User profile updated successfully
+          content:
+            application/json:
+              example:
+                id: "USR-1024"
+                name: "Rahul Sharma"
+                email: "planner@railway.gov.in"
+
+        "400":
+          description: Invalid profile data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - User account is inactive or suspended
+
+        "404":
+          description: User record not found
+
+
+  /user:
+
+    post:
+      tags:
+        - User
+
+      summary: Create RailOpt-AI user
+
+      description: |
+        Creates the RailOpt-AI application user corresponding to
+        the currently authenticated Firebase account.
+
+        This endpoint does not create a Firebase account.
+
+        Firebase Authentication handles authentication.
+        The Spring Boot backend creates the application-level user
+        record after verifying the Firebase ID Token.
+
+        The Firebase UID is obtained from the verified token and
+        must not be supplied by the client.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              name: "Rahul Sharma"
+              email: "planner@railway.gov.in"
+
+      responses:
+
+        "201":
+          description: RailOpt-AI user created successfully
+          content:
+            application/json:
+              example:
+                id: "USR-1024"
+                name: "Rahul Sharma"
+                email: "planner@railway.gov.in"
+                status: "ACTIVE"
+
+        "400":
+          description: Invalid user data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - User does not have permission to create users
+
+        "409":
+          description: User already exists for the authenticated Firebase account
+
+
+    get:
+      tags:
+        - User
+
+      summary: List users
+
+      description: |
+        Returns a paginated list of RailOpt-AI users.
+
+        Intended for authorized administrative users.
+
+        Users can be filtered using role, department and account status.
+
+      parameters:
+
+        - name: role
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter users by role
+          example: "PLANNER"
+
+        - name: department_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter users by department
+          example: "DEP-12"
+
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter users by account status
+          example: "ACTIVE"
+
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search users by name or email
+          example: "Rahul"
+
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Page number
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of users per page
+
+      responses:
+
+        "200":
+          description: Users retrieved successfully
+
+        "400":
+          description: Invalid query parameters
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions to list users
+
+
+  /user/{userId}:
+
+    get:
+      tags:
+        - User
+
+      summary: Get user by ID
+
+      description: |
+        Returns selected information about a specific RailOpt-AI user.
+
+        Administrative access may be required depending on the
+        authenticated user's role.
+
+      parameters:
+
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: RailOpt-AI user identifier
+          example: "USR-1024"
+
+      responses:
+
+        "200":
+          description: User retrieved successfully
+          content:
+            application/json:
+              example:
+                id: "USR-1024"
+                name: "Rahul Sharma"
+                email: "planner@railway.gov.in"
+                role: "PLANNER"
+                department_id: "DEP-12"
+                status: "ACTIVE"
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: User not found
+
+
+    patch:
+      tags:
+        - User
+
+      summary: Update user
+
+      description: |
+        Updates manageable information of a specific RailOpt-AI user.
+
+        This operation is restricted to authorized administrative users.
+
+        Authentication-related information and system-controlled
+        identifiers cannot be changed through this endpoint.
+
+      parameters:
+
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "USR-1024"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              name: "Rahul Sharma"
+
+      responses:
+
+        "200":
+          description: User updated successfully
+
+        "400":
+          description: Invalid user data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: User not found
+
+        "409":
+          description: User update conflicts with existing data
+
+
+  /user/{userId}/role:
+
+    patch:
+      tags:
+        - User
+
+      summary: Update user role
+
+      description: |
+        Assigns or changes the application role of a RailOpt-AI user.
+
+        This operation is restricted to authorized administrative users.
+
+      parameters:
+
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "USR-1024"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              role: "PLANNER"
+
+      responses:
+
+        "200":
+          description: User role updated successfully
+
+        "400":
+          description: Invalid or unsupported role
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions to change user roles
+
+        "404":
+          description: User not found
+
+        "409":
+          description: Role assignment conflicts with the current user state
+
+
+  /user/{userId}/department:
+
+    patch:
+      tags:
+        - User
+
+      summary: Assign user to department
+
+      description: |
+        Assigns a RailOpt-AI user to a department.
+
+        This operation is restricted to authorized administrative users.
+
+      parameters:
+
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "USR-1024"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              department_id: "DEP-12"
+
+      responses:
+
+        "200":
+          description: User department updated successfully
+
+        "400":
+          description: Invalid department data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions to assign departments
+
+        "404":
+          description: User or department not found
+
+        "409":
+          description: Department assignment conflicts with the current user state
+
+
+  /user/{userId}/status:
+
+    patch:
+      tags:
+        - User
+
+      summary: Update user status
+
+      description: |
+        Changes the application status of a RailOpt-AI user.
+
+        This does not modify the Firebase Authentication account.
+
+        Deactivating the application user prevents access to
+        protected RailOpt-AI operations.
+
+      parameters:
+
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "USR-1024"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              status: "INACTIVE"
+
+      responses:
+
+        "200":
+          description: User status updated successfully
+
+        "400":
+          description: Invalid user status
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions to change user status
+
+        "404":
+          description: User not found
+
+        "409":
+          description: Status change conflicts with the current user state
+
+
+  # ===================================================
+  # ORGANIZATION / DEPARTMENT MODULE
+  # ===================================================
+
+
+  /department:
+
+    get:
+      tags:
+        - Organization
+
+      summary: List departments
+
+      description: |
+        Returns a list of departments available in RailOpt-AI.
+
+        Supports filtering by status and pagination.
+
+      parameters:
+
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter departments by status
+          example: "ACTIVE"
+
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Page number
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of departments per page
+
+      responses:
+
+        "200":
+          description: Departments retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: "DEP-12"
+
+                    name:
+                      type: string
+                      example: "Track Maintenance"
+
+                    status:
+                      type: string
+                      example: "ACTIVE"
+
+        "400":
+          description: Invalid query parameters
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+
+    post:
+      tags:
+        - Organization
+
+      summary: Create department
+
+      description: |
+        Creates a new department in RailOpt-AI.
+
+        This operation is restricted to authorized administrative users.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                  description: Department name
+                  example: "Track Maintenance"
+
+      responses:
+
+        "201":
+          description: Department created successfully
+
+        "400":
+          description: Invalid department data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions to create departments
+
+        "409":
+          description: Department with the same name already exists
+
+
+  /department/{departmentId}:
+
+    get:
+      tags:
+        - Organization
+
+      summary: Get department by ID
+
+      description: |
+        Returns details of a specific department.
+
+      parameters:
+
+        - name: departmentId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Department identifier
+          example: "DEP-12"
+
+      responses:
+
+        "200":
+          description: Department retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: "DEP-12"
+
+                  name:
+                    type: string
+                    example: "Track Maintenance"
+
+                  status:
+                    type: string
+                    example: "ACTIVE"
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Department not found
+
+
+    patch:
+      tags:
+        - Organization
+
+      summary: Update department
+
+      description: |
+        Updates the editable information of a department.
+
+        This operation is restricted to authorized administrative users.
+
+      parameters:
+
+        - name: departmentId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Department identifier
+          example: "DEP-12"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                  description: Department name
+                  example: "Permanent Way Maintenance"
+
+      responses:
+
+        "200":
+          description: Department updated successfully
+
+        "400":
+          description: Invalid department data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Department not found
+
+        "409":
+          description: Department name already exists
+
+
+    delete:
+      tags:
+        - Organization
+
+      summary: Deactivate department
+
+      description: |
+        Deactivates a department.
+
+        The department is not physically deleted if it is referenced
+        by existing users or operational records.
+
+      parameters:
+
+        - name: departmentId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Department identifier
+          example: "DEP-12"
+
+      responses:
+
+        "204":
+          description: Department deactivated successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Department not found
+
+        "409":
+          description: Department cannot be deactivated because it is referenced by active records
+
+
+
+  # ===================================================
+  # INFRASTRUCTURE MODULE
+  # ===================================================
+
+
+  /infrastructure/sections:
+
+    get:
+      tags:
+        - Infrastructure
+
+      summary: List railway sections
+
+      description: |
+        Returns railway sections available in RailOpt-AI.
+
+        Supports filtering by status and pagination.
+
+      parameters:
+
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter sections by status
+          example: "ACTIVE"
+
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Page number
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of sections per page
+
+      responses:
+
+        "200":
+          description: Sections retrieved successfully
+
+        "400":
+          description: Invalid query parameters
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+
+    post:
+      tags:
+        - Infrastructure
+
+      summary: Create railway section
+
+      description: |
+        Creates a new railway section in RailOpt-AI.
+
+        This operation is restricted to authorized users.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+
+                name:
+                  type: string
+                  description: Railway section name
+                  example: "Pune - Daund"
+
+                code:
+                  type: string
+                  description: Unique section code
+                  example: "PN-DN"
+
+      responses:
+
+        "201":
+          description: Railway section created successfully
+
+        "400":
+          description: Invalid section data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "409":
+          description: Section with the same identifier already exists
+
+
+  /infrastructure/sections/{sectionId}:
+
+    get:
+      tags:
+        - Infrastructure
+
+      summary: Get railway section
+
+      description: |
+        Returns details of a specific railway section.
+
+      parameters:
+
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Railway section identifier
+          example: "SEC-101"
+
+      responses:
+
+        "200":
+          description: Railway section retrieved successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Railway section not found
+
+
+    patch:
+      tags:
+        - Infrastructure
+
+      summary: Update railway section
+
+      parameters:
+
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Railway section identifier
+          example: "SEC-101"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+
+                name:
+                  type: string
+                  description: Railway section name
+                  example: "Pune - Daund"
+
+                code:
+                  type: string
+                  description: Unique section code
+                  example: "PN-DN"
+
+      responses:
+
+        "200":
+          description: Railway section updated successfully
+
+        "400":
+          description: Invalid section data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Railway section not found
+
+        "409":
+          description: Section identifier already exists
+
+
+    delete:
+      tags:
+        - Infrastructure
+
+      summary: Deactivate railway section
+
+      parameters:
+
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Railway section identifier
+          example: "SEC-101"
+
+      responses:
+
+        "204":
+          description: Railway section deactivated successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Railway section not found
+
+        "409":
+          description: Section cannot be deactivated because it is referenced by active infrastructure or operational records
+
+
+  /infrastructure/sections/{sectionId}/tracks:
+
+    get:
+      tags:
+        - Infrastructure
+
+      summary: List tracks in a railway section
+
+      description: |
+        Returns the tracks belonging to the specified railway section.
+
+      parameters:
+
+        - name: sectionId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Railway section identifier
+          example: "SEC-101"
+
+      responses:
+
+        "200":
+          description: Tracks retrieved successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Railway section not found
+
+
+  /infrastructure/tracks:
+
+    post:
+      tags:
+        - Infrastructure
+
+      summary: Create track
+
+      description: |
+        Creates a track within a railway section.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - section_id
+                - name
+              properties:
+
+                section_id:
+                  type: string
+                  description: Railway section identifier
+                  example: "SEC-101"
+
+                name:
+                  type: string
+                  description: Track name or identifier
+                  example: "UP Main Line"
+
+                code:
+                  type: string
+                  description: Unique track code
+                  example: "UP-ML-01"
+
+      responses:
+
+        "201":
+          description: Track created successfully
+
+        "400":
+          description: Invalid track data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Railway section not found
+
+        "409":
+          description: Track with the same identifier already exists
+
+
+  /infrastructure/tracks/{trackId}:
+
+    get:
+      tags:
+        - Infrastructure
+
+      summary: Get track
+
+      parameters:
+
+        - name: trackId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Track identifier
+          example: "TRK-201"
+
+      responses:
+
+        "200":
+          description: Track retrieved successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Track not found
+
+
+    patch:
+      tags:
+        - Infrastructure
+
+      summary: Update track
+
+      parameters:
+
+        - name: trackId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Track identifier
+          example: "TRK-201"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+
+                name:
+                  type: string
+                  description: Track name or identifier
+                  example: "UP Main Line"
+
+                code:
+                  type: string
+                  description: Unique track code
+                  example: "UP-ML-01"
+
+      responses:
+
+        "200":
+          description: Track updated successfully
+
+        "400":
+          description: Invalid track data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Track not found
+
+        "409":
+          description: Track identifier already exists
+
+
+    delete:
+      tags:
+        - Infrastructure
+
+      summary: Deactivate track
+
+      parameters:
+
+        - name: trackId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Track identifier
+          example: "TRK-201"
+
+      responses:
+
+        "204":
+          description: Track deactivated successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Track not found
+
+        "409":
+          description: Track cannot be deactivated because it is referenced by active blocks or operational records
+
+
+  /infrastructure/tracks/{trackId}/blocks:
+
+    get:
+      tags:
+        - Infrastructure
+
+      summary: List blocks on a track
+
+      description: |
+        Returns the railway blocks associated with a specific track.
+
+      parameters:
+
+        - name: trackId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Track identifier
+          example: "TRK-201"
+
+      responses:
+
+        "200":
+          description: Blocks retrieved successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Track not found
+
+
+  /infrastructure/blocks:
+
+    post:
+      tags:
+        - Infrastructure
+
+      summary: Create block
+
+      description: |
+        Creates a railway block associated with a track.
+
+        A block represents a defined portion of railway infrastructure
+        that can be occupied, reserved, blocked for maintenance,
+        or considered during automatic block planning.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - track_id
+                - name
+              properties:
+
+                track_id:
+                  type: string
+                  description: Track identifier
+                  example: "TRK-201"
+
+                name:
+                  type: string
+                  description: Block name or identifier
+                  example: "Block B-12"
+
+                code:
+                  type: string
+                  description: Unique block code
+                  example: "BLK-B12"
+
+      responses:
+
+        "201":
+          description: Block created successfully
+
+        "400":
+          description: Invalid block data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Track not found
+
+        "409":
+          description: Block with the same identifier already exists
+
+
+  /infrastructure/blocks/{blockId}:
+
+    get:
+      tags:
+        - Infrastructure
+
+      summary: Get block
+
+      description: |
+        Returns details of a specific railway block.
+
+      parameters:
+
+        - name: blockId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Block identifier
+          example: "BLK-301"
+
+      responses:
+
+        "200":
+          description: Block retrieved successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Block not found
+
+
+    patch:
+      tags:
+        - Infrastructure
+
+      summary: Update block
+
+      parameters:
+
+        - name: blockId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Block identifier
+          example: "BLK-301"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+
+                name:
+                  type: string
+                  description: Block name or identifier
+                  example: "Block B-12"
+
+                code:
+                  type: string
+                  description: Unique block code
+                  example: "BLK-B12"
+
+      responses:
+
+        "200":
+          description: Block updated successfully
+
+        "400":
+          description: Invalid block data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Block not found
+
+        "409":
+          description: Block identifier already exists
+
+
+    delete:
+      tags:
+        - Infrastructure
+
+      summary: Deactivate block
+
+      parameters:
+
+        - name: blockId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Block identifier
+          example: "BLK-301"
+
+      responses:
+
+        "204":
+          description: Block deactivated successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Block not found
+
+        "409":
+          description: Block cannot be deactivated because it is referenced by active schedules, maintenance tasks, or other operational records
+
+  /infrastructure/graph:
+
+    get:
+      tags:
+        - Infrastructure
+
+      summary: Get railway infrastructure graph
+
+      description: |
+        Returns a lightweight graph representation of the railway
+        infrastructure for graphical visualization in the frontend.
+
+        The response contains infrastructure nodes and the
+        relationships between them.
+
+        Nodes may represent stations, tracks, blocks and other
+        infrastructure elements required by the railway topology.
+
+        The response contains only visualization-level information.
+        Detailed information about an individual element should be
+        retrieved through its corresponding infrastructure endpoint.
+
+      parameters:
+
+        - name: section_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Limit the graph to a specific railway section
+          example: "SEC-101"
+
+        - name: include_blocks
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+          description: Include railway blocks in the graph
+
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter graph elements by operational status
+          example: "ACTIVE"
+
+      responses:
+
+        "200":
+          description: Railway infrastructure graph retrieved successfully
+          content:
+            application/json:
+              example:
+
+                nodes:
+
+                  - id: "STN-101"
+                    type: "STATION"
+                    name: "Pune"
+                    status: "ACTIVE"
+
+                  - id: "STN-102"
+                    type: "STATION"
+                    name: "Khadki"
+                    status: "ACTIVE"
+
+                  - id: "TRK-201"
+                    type: "TRACK"
+                    name: "UP Main Line"
+                    status: "ACTIVE"
+
+                  - id: "BLK-301"
+                    type: "BLOCK"
+                    name: "B-12"
+                    status: "AVAILABLE"
+
+                edges:
+
+                  - source: "STN-101"
+                    target: "TRK-201"
+                    type: "CONNECTED_TO"
+
+                  - source: "TRK-201"
+                    target: "BLK-301"
+                    type: "CONTAINS"
+
+                  - source: "BLK-301"
+                    target: "STN-102"
+                    type: "LEADS_TO"
+
+        "400":
+          description: Invalid graph query parameters
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Requested infrastructure section not found
+
+        "500":
+          description: Internal server error while constructing the infrastructure graph
+
+
+
+  # =====================================================
+  # ASSETS MODULE
+  # =====================================================
+
+
+  /asset:
+
+    get:
+      tags:
+        - Assets
+
+      summary: List railway assets
+
+      description: |
+        Returns a paginated list of railway assets.
+
+        Assets can be filtered by asset type, operational status,
+        track section and station.
+
+      parameters:
+
+        - name: asset_type_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter assets by asset type
+          example: "AT-01"
+
+        - name: track_section_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter assets associated with a track section
+          example: "TS-101"
+
+        - name: station_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter assets associated with a station
+          example: "STN-101"
+
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter assets by operational status
+          example: "ACTIVE"
+
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search assets by name or code
+          example: "SIG-102"
+
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Page number
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of assets per page
+
+      responses:
+
+        "200":
+          description: Assets retrieved successfully
+
+        "400":
+          description: Invalid query parameters
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+
+    post:
+      tags:
+        - Assets
+
+      summary: Create railway asset
+
+      description: |
+        Creates a new railway asset.
+
+        The asset may be associated with a track section and/or
+        station according to the infrastructure model.
+
+        The asset type must reference an existing asset type.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - asset_type_id
+              properties:
+
+                asset_type_id:
+                  type: string
+                  description: Asset type identifier
+                  example: "AT-01"
+
+                track_section_id:
+                  type: string
+                  nullable: true
+                  description: Track section associated with the asset
+                  example: "TS-101"
+
+                station_id:
+                  type: string
+                  nullable: true
+                  description: Station associated with the asset
+                  example: "STN-101"
+
+                name:
+                  type: string
+                  description: Asset name
+                  example: "Signal S-102"
+
+                code:
+                  type: string
+                  description: Unique asset code
+                  example: "SIG-102"
+
+      responses:
+
+        "201":
+          description: Railway asset created successfully
+
+        "400":
+          description: Invalid asset data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Referenced asset type or infrastructure element not found
+
+        "409":
+          description: Asset with the same identifier already exists
+
+
+  /asset/{assetId}:
+
+    get:
+      tags:
+        - Assets
+
+      summary: Get railway asset
+
+      description: |
+        Returns the required information for a specific railway asset.
+
+        The response is intended for asset details and frontend
+        asset inspection without exposing unnecessary database fields.
+
+      parameters:
+
+        - name: assetId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Asset identifier
+          example: "AST-1024"
+
+      responses:
+
+        "200":
+          description: Asset retrieved successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Asset not found
+
+
+    patch:
+      tags:
+        - Assets
+
+      summary: Update railway asset
+
+      description: |
+        Updates editable information of an existing railway asset.
+
+        System-controlled identifiers and historical information
+        cannot be modified through this endpoint.
+
+      parameters:
+
+        - name: assetId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Asset identifier
+          example: "AST-1024"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+
+                asset_type_id:
+                  type: string
+                  description: Asset type identifier
+                  example: "AT-01"
+
+                track_section_id:
+                  type: string
+                  nullable: true
+                  description: Track section associated with the asset
+                  example: "TS-101"
+
+                station_id:
+                  type: string
+                  nullable: true
+                  description: Station associated with the asset
+                  example: "STN-101"
+
+                name:
+                  type: string
+                  description: Asset name
+                  example: "Signal S-102"
+
+                code:
+                  type: string
+                  description: Unique asset code
+                  example: "SIG-102"
+
+      responses:
+
+        "200":
+          description: Asset updated successfully
+
+        "400":
+          description: Invalid asset data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Asset or referenced infrastructure element not found
+
+        "409":
+          description: Asset update conflicts with existing data
+
+
+    delete:
+      tags:
+        - Assets
+
+      summary: Deactivate railway asset
+
+      description: |
+        Deactivates a railway asset from active use.
+
+        Historical records associated with the asset are retained
+        where required by the system.
+
+      parameters:
+
+        - name: assetId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Asset identifier
+          example: "AST-1024"
+
+      responses:
+
+        "204":
+          description: Asset deactivated successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Asset not found
+
+        "409":
+          description: Asset cannot be deactivated because it is referenced by active records
+
+
+  /asset/by-track-section/{trackSectionId}:
+
+    get:
+      tags:
+        - Assets
+
+      summary: List assets on a track section
+
+      description: |
+        Returns assets associated with a specific track section.
+
+        This endpoint is useful when the frontend displays a
+        track section in the railway infrastructure graph and
+        needs to retrieve the assets located on that section.
+
+      parameters:
+
+        - name: trackSectionId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Track section identifier
+          example: "TS-101"
+
+        - name: asset_type_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by asset type
+          example: "AT-01"
+
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by asset status
+          example: "ACTIVE"
+
+      responses:
+
+        "200":
+          description: Assets retrieved successfully
+
+        "400":
+          description: Invalid track section identifier
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Track section not found
+
+
+  /asset/by-station/{stationId}:
+
+    get:
+      tags:
+        - Assets
+
+      summary: List assets at a station
+
+      description: |
+        Returns assets associated with a specific station.
+
+        This endpoint is useful when the frontend selects a station
+        in the infrastructure graph and needs to display the
+        assets associated with it.
+
+      parameters:
+
+        - name: stationId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Station identifier
+          example: "STN-101"
+
+        - name: asset_type_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by asset type
+          example: "AT-01"
+
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by asset status
+          example: "ACTIVE"
+
+      responses:
+
+        "200":
+          description: Assets retrieved successfully
+
+        "400":
+          description: Invalid station identifier
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Station not found
+
+
+
+  # =====================================================
+  # MAINTENANCE MODULE
+  # =====================================================
+
+
+  /maintenance:
+
+    get:
+      tags:
+        - Maintenance
+
+      summary: List maintenance records
+
+      description: |
+        Returns a paginated list of maintenance records.
+
+        Records can be filtered by asset, maintenance status,
+        maintenance type and planned date range.
+
+      parameters:
+
+        - name: asset_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter maintenance records by asset
+          example: "AST-1024"
+
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by maintenance status
+          example: "SCHEDULED"
+
+        - name: maintenance_type
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by maintenance type
+          example: "PREVENTIVE"
+
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Return records scheduled from this time
+          example: "2026-09-10T00:00:00Z"
+
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Return records scheduled until this time
+          example: "2026-09-20T23:59:59Z"
+
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Page number
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of records per page
+
+      responses:
+
+        "200":
+          description: Maintenance records retrieved successfully
+
+        "400":
+          description: Invalid query parameters
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+
+    post:
+      tags:
+        - Maintenance
+
+      summary: Create maintenance record
+
+      description: |
+        Creates a maintenance record for a railway asset.
+
+        The referenced asset must exist in RailOpt-AI.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - asset_id
+                - maintenance_type
+              properties:
+
+                asset_id:
+                  type: string
+                  description: Asset requiring maintenance
+                  example: "AST-1024"
+
+                maintenance_type:
+                  type: string
+                  description: Type of maintenance
+                  example: "PREVENTIVE"
+
+                scheduled_start:
+                  type: string
+                  format: date-time
+                  description: Planned maintenance start time
+                  example: "2026-09-15T22:00:00Z"
+
+                scheduled_end:
+                  type: string
+                  format: date-time
+                  description: Planned maintenance end time
+                  example: "2026-09-16T04:00:00Z"
+
+                description:
+                  type: string
+                  description: Description of maintenance work
+                  example: "Routine signal inspection"
+
+      responses:
+
+        "201":
+          description: Maintenance record created successfully
+
+        "400":
+          description: Invalid maintenance data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Asset not found
+
+        "409":
+          description: Maintenance record conflicts with an existing maintenance record
+
+
+  /maintenance/{maintenanceId}:
+
+    get:
+      tags:
+        - Maintenance
+
+      summary: Get maintenance record
+
+      description: |
+        Returns details of a specific maintenance record.
+
+      parameters:
+
+        - name: maintenanceId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Maintenance record identifier
+          example: "MNT-1024"
+
+      responses:
+
+        "200":
+          description: Maintenance record retrieved successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Maintenance record not found
+
+
+    patch:
+      tags:
+        - Maintenance
+
+      summary: Update maintenance record
+
+      description: |
+        Updates editable information of a maintenance record.
+
+        Changes affecting operational availability or planned
+        maintenance windows may require appropriate authorization.
+
+      parameters:
+
+        - name: maintenanceId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Maintenance record identifier
+          example: "MNT-1024"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+
+                maintenance_type:
+                  type: string
+                  example: "CORRECTIVE"
+
+                scheduled_start:
+                  type: string
+                  format: date-time
+                  example: "2026-09-15T22:00:00Z"
+
+                scheduled_end:
+                  type: string
+                  format: date-time
+                  example: "2026-09-16T04:00:00Z"
+
+                description:
+                  type: string
+                  example: "Signal inspection and component replacement"
+
+      responses:
+
+        "200":
+          description: Maintenance record updated successfully
+
+        "400":
+          description: Invalid maintenance data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Maintenance record not found
+
+        "409":
+          description: Updated maintenance window conflicts with another maintenance record
+
+
+    delete:
+      tags:
+        - Maintenance
+
+      summary: Cancel maintenance record
+
+      description: |
+        Cancels an existing maintenance record.
+
+        Historical maintenance information should be retained
+        rather than physically deleting completed maintenance
+        records.
+
+      parameters:
+
+        - name: maintenanceId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Maintenance record identifier
+          example: "MNT-1024"
+
+      responses:
+
+        "204":
+          description: Maintenance record cancelled successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Maintenance record not found
+
+        "409":
+          description: Maintenance record cannot be cancelled in its current state
+
+
+  /maintenance/by-asset/{assetId}:
+
+    get:
+      tags:
+        - Maintenance
+
+      summary: List maintenance records for an asset
+
+      description: |
+        Returns maintenance records associated with a specific asset.
+
+        This endpoint can be used from the asset details screen
+        to display relevant maintenance information.
+
+      parameters:
+
+        - name: assetId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Asset identifier
+          example: "AST-1024"
+
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter maintenance records by status
+          example: "SCHEDULED"
+
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+
+      responses:
+
+        "200":
+          description: Asset maintenance records retrieved successfully
+
+        "400":
+          description: Invalid asset identifier
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Asset not found
+
+
+  /maintenance/{maintenanceId}/status:
+
+    patch:
+      tags:
+        - Maintenance
+
+      summary: Update maintenance status
+
+      description: |
+        Updates the lifecycle status of a maintenance record.
+
+        This endpoint is used when maintenance is scheduled,
+        started, completed or cancelled.
+
+      parameters:
+
+        - name: maintenanceId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Maintenance record identifier
+          example: "MNT-1024"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+
+                status:
+                  type: string
+                  description: New maintenance status
+                  example: "COMPLETED"
+
+      responses:
+
+        "200":
+          description: Maintenance status updated successfully
+
+        "400":
+          description: Invalid status or invalid state transition
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Maintenance record not found
+
+        "409":
+          description: Maintenance status cannot be changed from its current state
+
+
+    # =====================================================
+  # TRAIN OPERATIONS MODULE
+  # =====================================================
+
+  # =====================================================
+  # TRAIN TYPES
+  # =====================================================
+
+  /train-type:
+
+    get:
+      tags:
+        - Train Operations
+
+      summary: List train types
+
+      description: |
+        Returns train types configured in RailOpt-AI.
+
+        Train types classify trains and provide operational
+        classification information such as category and priority class.
+
+      parameters:
+
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by train category
+          example: "PASSENGER"
+
+        - name: priority_class
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by operational priority class
+          example: "HIGH"
+
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+
+      responses:
+
+        "200":
+          description: Train types retrieved successfully
+
+        "400":
+          description: Invalid query parameters
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+
+    post:
+      tags:
+        - Train Operations
+
+      summary: Create train type
+
+      description: |
+        Creates a train type used to classify trains in RailOpt-AI.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+                - name
+                - category
+                - priority_class
+              properties:
+
+                code:
+                  type: string
+                  example: "EXP"
+
+                name:
+                  type: string
+                  example: "Express"
+
+                description:
+                  type: string
+                  example: "Express passenger train"
+
+                category:
+                  type: string
+                  example: "PASSENGER"
+
+                priority_class:
+                  type: string
+                  example: "HIGH"
+
+      responses:
+
+        "201":
+          description: Train type created successfully
+
+        "400":
+          description: Invalid train type data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "409":
+          description: Train type code already exists
+
+
+  /train-type/{trainTypeId}:
+
+    get:
+      tags:
+        - Train Operations
+
+      summary: Get train type
+
+      parameters:
+
+        - name: trainTypeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Train type identifier
+
+      responses:
+
+        "200":
+          description: Train type retrieved successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Train type not found
+
+
+    patch:
+      tags:
+        - Train Operations
+
+      summary: Update train type
+
+      parameters:
+
+        - name: trainTypeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+
+                name:
+                  type: string
+                  example: "Express Passenger"
+
+                description:
+                  type: string
+                  example: "Express passenger train"
+
+                category:
+                  type: string
+                  example: "PASSENGER"
+
+                priority_class:
+                  type: string
+                  example: "HIGH"
+
+      responses:
+
+        "200":
+          description: Train type updated successfully
+
+        "400":
+          description: Invalid train type data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Train type not found
+
+
+    delete:
+      tags:
+        - Train Operations
+
+      summary: Delete train type
+
+      description: |
+        Deletes a train type only when it is not referenced
+        by any train.
+
+      parameters:
+
+        - name: trainTypeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+
+        "204":
+          description: Train type deleted successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Train type not found
+
+        "409":
+          description: Train type cannot be deleted because trains reference it
+
+
+  # =====================================================
+  # TRAINS
+  # =====================================================
+
+  /train:
+
+    get:
+      tags:
+        - Train Operations
+
+      summary: List trains
+
+      description: |
+        Returns a paginated list of trains.
+
+        Supports filtering by train type, status and search criteria.
+
+      parameters:
+
+        - name: train_type_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter by train type
+
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by train status
+          example: "ACTIVE"
+
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search by train number or train name
+          example: "12101"
+
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+
+      responses:
+
+        "200":
+          description: Trains retrieved successfully
+
+        "400":
+          description: Invalid query parameters
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+
+    post:
+      tags:
+        - Train Operations
+
+      summary: Create train
+
+      description: |
+        Creates a train in RailOpt-AI.
+
+        The train type must reference an existing train type.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - train_type_id
+                - train_number
+              properties:
+
+                train_type_id:
+                  type: string
+                  format: uuid
+                  description: Train type identifier
+
+                train_number:
+                  type: string
+                  example: "12101"
+
+                train_name:
+                  type: string
+                  example: "Deccan Queen"
+
+                operator:
+                  type: string
+                  example: "Indian Railways"
+
+      responses:
+
+        "201":
+          description: Train created successfully
+
+        "400":
+          description: Invalid train data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Train type not found
+
+        "409":
+          description: Train number already exists
+
+
+  /train/{trainId}:
+
+    get:
+      tags:
+        - Train Operations
+
+      summary: Get train
+
+      description: |
+        Returns the required operational information for a train.
+
+      parameters:
+
+        - name: trainId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+
+        "200":
+          description: Train retrieved successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Train not found
+
+
+    patch:
+      tags:
+        - Train Operations
+
+      summary: Update train
+
+      parameters:
+
+        - name: trainId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+
+                train_type_id:
+                  type: string
+                  format: uuid
+
+                train_number:
+                  type: string
+                  example: "12101"
+
+                train_name:
+                  type: string
+                  example: "Deccan Queen"
+
+                operator:
+                  type: string
+                  example: "Indian Railways"
+
+      responses:
+
+        "200":
+          description: Train updated successfully
+
+        "400":
+          description: Invalid train data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Train or train type not found
+
+        "409":
+          description: Train number already exists
+
+
+    delete:
+      tags:
+        - Train Operations
+
+      summary: Deactivate train
+
+      description: |
+        Deactivates a train from future operational use.
+
+        Existing historical schedules and runs are retained.
+
+      parameters:
+
+        - name: trainId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+
+        "204":
+          description: Train deactivated successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Train not found
+
+        "409":
+          description: Train cannot be deactivated because of active operational records
+
+
+  # =====================================================
+  # TRAIN ROUTES
+  # =====================================================
+
+  /train/{trainId}/route:
+
+    get:
+      tags:
+        - Train Operations
+
+      summary: List routes for a train
+
+      description: |
+        Returns routes configured for the specified train.
+
+      parameters:
+
+        - name: trainId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+
+        "200":
+          description: Train routes retrieved successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Train not found
+
+
+    post:
+      tags:
+        - Train Operations
+
+      summary: Create train route
+
+      parameters:
+
+        - name: trainId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - route_code
+                - name
+                - origin_station_id
+                - destination_station_id
+              properties:
+
+                route_code:
+                  type: string
+                  example: "12101-PN-MUM"
+
+                name:
+                  type: string
+                  example: "Pune to Mumbai"
+
+                origin_station_id:
+                  type: string
+                  format: uuid
+
+                destination_station_id:
+                  type: string
+                  format: uuid
+
+      responses:
+
+        "201":
+          description: Train route created successfully
+
+        "400":
+          description: Invalid route data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Train or referenced station not found
+
+        "409":
+          description: Route code already exists
+
+
+  /train-route/{routeId}:
+
+    get:
+      tags:
+        - Train Operations
+
+      summary: Get train route
+
+      parameters:
+
+        - name: routeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+
+        "200":
+          description: Train route retrieved successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Train route not found
+
+
+    patch:
+      tags:
+        - Train Operations
+
+      summary: Update train route
+
+      parameters:
+
+        - name: routeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+
+                route_code:
+                  type: string
+                  example: "12101-PN-MUM"
+
+                name:
+                  type: string
+                  example: "Pune to Mumbai"
+
+                origin_station_id:
+                  type: string
+                  format: uuid
+
+                destination_station_id:
+                  type: string
+                  format: uuid
+
+      responses:
+
+        "200":
+          description: Train route updated successfully
+
+        "400":
+          description: Invalid route data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train route or referenced station not found
+
+        "409":
+          description: Route code already exists
+
+
+    delete:
+      tags:
+        - Train Operations
+
+      summary: Delete train route
+
+      description: |
+        Deletes a train route only when it is not required
+        by active schedules or runs.
+
+      parameters:
+
+        - name: routeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+
+        "204":
+          description: Train route deleted successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train route not found
+
+        "409":
+          description: Route cannot be deleted because it is referenced by schedules or runs
+
+
+  # =====================================================
+  # ROUTE STOPS
+  # =====================================================
+
+  /train-route/{routeId}/stop:
+
+    get:
+      tags:
+        - Train Operations
+
+      summary: List route stops
+
+      description: |
+        Returns the ordered station stops belonging to a train route.
+
+        The sequence number determines the order in which
+        stations are visited.
+
+      parameters:
+
+        - name: routeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+
+        "200":
+          description: Route stops retrieved successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Forbidden - Insufficient permissions
+
+        "404":
+          description: Train route not found
+
+
+    post:
+      tags:
+        - Train Operations
+
+      summary: Add route stop
+
+      parameters:
+
+        - name: routeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - station_id
+                - sequence_no
+              properties:
+
+                station_id:
+                  type: string
+                  format: uuid
+
+                sequence_no:
+                  type: integer
+                  minimum: 1
+
+                arrival_offset_minutes:
+                  type: integer
+                  minimum: 0
+
+                departure_offset_minutes:
+                  type: integer
+                  minimum: 0
+
+      responses:
+
+        "201":
+          description: Route stop created successfully
+
+        "400":
+          description: Invalid route stop data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train route or station not found
+
+        "409":
+          description: Sequence number or station configuration conflicts with the route
+
+
+  /train-route-stop/{routeStopId}:
+
+    patch:
+      tags:
+        - Train Operations
+
+      summary: Update route stop
+
+      parameters:
+
+        - name: routeStopId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+
+                station_id:
+                  type: string
+                  format: uuid
+
+                sequence_no:
+                  type: integer
+                  minimum: 1
+
+                arrival_offset_minutes:
+                  type: integer
+                  minimum: 0
+
+                departure_offset_minutes:
+                  type: integer
+                  minimum: 0
+
+      responses:
+
+        "200":
+          description: Route stop updated successfully
+
+        "400":
+          description: Invalid route stop data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Route stop or station not found
+
+        "409":
+          description: Route stop configuration conflicts with the route
+
+
+    delete:
+      tags:
+        - Train Operations
+
+      summary: Remove route stop
+
+      parameters:
+
+        - name: routeStopId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+
+        "204":
+          description: Route stop removed successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Route stop not found
+
+        "409":
+          description: Route stop cannot be removed because of dependent schedules or runs
+
+
+  # =====================================================
+  # TRAIN SCHEDULES
+  # =====================================================
+
+  /train/{trainId}/schedule:
+
+    get:
+      tags:
+        - Train Operations
+
+      summary: List train schedules
+
+      parameters:
+
+        - name: trainId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+        - name: train_route_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+
+        - name: valid_from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+
+        - name: valid_until
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+
+      responses:
+
+        "200":
+          description: Train schedules retrieved successfully
+
+        "400":
+          description: Invalid schedule filters
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train not found
+
+
+    post:
+      tags:
+        - Train Operations
+
+      summary: Create train schedule
+
+      parameters:
+
+        - name: trainId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - train_route_id
+                - schedule_code
+                - valid_from
+                - valid_until
+                - operating_days
+                - departure_time
+                - arrival_time
+              properties:
+
+                train_route_id:
+                  type: string
+                  format: uuid
+
+                schedule_code:
+                  type: string
+                  example: "SCH-12101-WEEKDAY"
+
+                valid_from:
+                  type: string
+                  format: date
+
+                valid_until:
+                  type: string
+                  format: date
+
+                operating_days:
+                  type: string
+                  example: "MON,TUE,WED,THU,FRI"
+
+                departure_time:
+                  type: string
+                  format: time
+                  example: "06:15:00"
+
+                arrival_time:
+                  type: string
+                  format: time
+                  example: "09:45:00"
+
+      responses:
+
+        "201":
+          description: Train schedule created successfully
+
+        "400":
+          description: Invalid schedule data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train or train route not found
+
+        "409":
+          description: Schedule code or schedule configuration conflicts with an existing schedule
+
+
+  /train-schedule/{scheduleId}:
+
+    get:
+      tags:
+        - Train Operations
+
+      summary: Get train schedule
+
+      parameters:
+
+        - name: scheduleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+
+        "200":
+          description: Train schedule retrieved successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train schedule not found
+
+
+    patch:
+      tags:
+        - Train Operations
+
+      summary: Update train schedule
+
+      parameters:
+
+        - name: scheduleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+
+                train_route_id:
+                  type: string
+                  format: uuid
+
+                valid_from:
+                  type: string
+                  format: date
+
+                valid_until:
+                  type: string
+                  format: date
+
+                operating_days:
+                  type: string
+                  example: "MON,TUE,WED,THU,FRI"
+
+                departure_time:
+                  type: string
+                  format: time
+
+                arrival_time:
+                  type: string
+                  format: time
+
+                status:
+                  type: string
+
+      responses:
+
+        "200":
+          description: Train schedule updated successfully
+
+        "400":
+          description: Invalid schedule data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train schedule or train route not found
+
+        "409":
+          description: Schedule conflicts with an existing schedule
+
+
+    delete:
+      tags:
+        - Train Operations
+
+      summary: Deactivate train schedule
+
+      parameters:
+
+        - name: scheduleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+
+        "204":
+          description: Train schedule deactivated successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train schedule not found
+
+        "409":
+          description: Schedule cannot be deactivated because it has dependent active runs
+
+
+  # =====================================================
+  # TRAIN RUNS
+  # =====================================================
+
+  /train/{trainId}/run:
+
+    get:
+      tags:
+        - Train Operations
+
+      summary: List train runs
+
+      description: |
+        Returns operational runs of a train.
+
+        A train run represents a specific operation of a train
+        on a particular operation date based on a configured schedule.
+
+      parameters:
+
+        - name: trainId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+        - name: operation_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+
+      responses:
+
+        "200":
+          description: Train runs retrieved successfully
+
+        "400":
+          description: Invalid run filters
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train not found
+
+
+    post:
+      tags:
+        - Train Operations
+
+      summary: Create train run
+
+      description: |
+        Creates an operational run for a train.
+
+        The run references the train, route and schedule
+        from which the operation is generated.
+
+      parameters:
+
+        - name: trainId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - train_route_id
+                - train_schedule_id
+                - run_code
+                - operation_date
+              properties:
+
+                train_route_id:
+                  type: string
+                  format: uuid
+
+                train_schedule_id:
+                  type: string
+                  format: uuid
+
+                run_code:
+                  type: string
+                  example: "RUN-12101-2026-09-10"
+
+                operation_date:
+                  type: string
+                  format: date
+
+                planned_start_at:
+                  type: string
+                  format: date-time
+
+                planned_end_at:
+                  type: string
+                  format: date-time
+
+      responses:
+
+        "201":
+          description: Train run created successfully
+
+        "400":
+          description: Invalid train run data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train, route or schedule not found
+
+        "409":
+          description: Run code already exists or run conflicts with existing operational data
+
+
+  /train-run/{runId}:
+
+    get:
+      tags:
+        - Train Operations
+
+      summary: Get train run
+
+      description: |
+        Returns operational details of a specific train run.
+
+        This endpoint is intended for operational monitoring
+        and downstream scheduling/conflict analysis.
+
+      parameters:
+
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+
+        "200":
+          description: Train run retrieved successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train run not found
+
+
+    patch:
+      tags:
+        - Train Operations
+
+      summary: Update train run
+
+      parameters:
+
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+
+                status:
+                  type: string
+
+                planned_start_at:
+                  type: string
+                  format: date-time
+
+                planned_end_at:
+                  type: string
+                  format: date-time
+
+                actual_start_at:
+                  type: string
+                  format: date-time
+
+                actual_end_at:
+                  type: string
+                  format: date-time
+
+      responses:
+
+        "200":
+          description: Train run updated successfully
+
+        "400":
+          description: Invalid run data or invalid operational state transition
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train run not found
+
+        "409":
+          description: Run update conflicts with operational constraints
+
+
+  # =====================================================
+  # TRAIN RUN STOPS
+  # =====================================================
+
+  /train-run/{runId}/stop:
+
+    get:
+      tags:
+        - Train Operations
+
+      summary: List train run stops
+
+      description: |
+        Returns the actual operational stop sequence
+        associated with a train run.
+
+        Planned and actual arrival/departure times are included
+        where available.
+
+      parameters:
+
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+
+        "200":
+          description: Train run stops retrieved successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train run not found
+
+
+    post:
+      tags:
+        - Train Operations
+
+      summary: Add train run stop
+
+      parameters:
+
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - station_id
+                - sequence_no
+              properties:
+
+                station_id:
+                  type: string
+                  format: uuid
+
+                sequence_no:
+                  type: integer
+                  minimum: 1
+
+                planned_arrival_at:
+                  type: string
+                  format: date-time
+
+                planned_departure_at:
+                  type: string
+                  format: date-time
+
+      responses:
+
+        "201":
+          description: Train run stop created successfully
+
+        "400":
+          description: Invalid run stop data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train run or station not found
+
+        "409":
+          description: Run stop conflicts with the run sequence
+
+
+  /train-run-stop/{runStopId}:
+
+    patch:
+      tags:
+        - Train Operations
+
+      summary: Update train run stop
+
+      parameters:
+
+        - name: runStopId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+
+                sequence_no:
+                  type: integer
+                  minimum: 1
+
+                planned_arrival_at:
+                  type: string
+                  format: date-time
+
+                planned_departure_at:
+                  type: string
+                  format: date-time
+
+                actual_arrival_at:
+                  type: string
+                  format: date-time
+
+                actual_departure_at:
+                  type: string
+                  format: date-time
+
+      responses:
+
+        "200":
+          description: Train run stop updated successfully
+
+        "400":
+          description: Invalid run stop data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train run stop not found
+
+        "409":
+          description: Updated stop conflicts with run sequence or timing
+
+
+  # =====================================================
+  # TRAIN RUN TRACK SECTIONS
+  # =====================================================
+
+  /train-run/{runId}/track-section:
+
+    get:
+      tags:
+        - Train Operations
+
+      summary: List track sections used by train run
+
+      description: |
+        Returns the ordered track sections planned for a train run.
+
+        This data is used by the operational visualization
+        and downstream scheduling and conflict analysis.
+
+      parameters:
+
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+
+        "200":
+          description: Train run track sections retrieved successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train run not found
+
+
+    post:
+      tags:
+        - Train Operations
+
+      summary: Add track section to train run
+
+      parameters:
+
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - track_section_id
+                - sequence_no
+              properties:
+
+                track_section_id:
+                  type: string
+                  format: uuid
+
+                sequence_no:
+                  type: integer
+                  minimum: 1
+
+                planned_entry_at:
+                  type: string
+                  format: date-time
+
+                planned_exit_at:
+                  type: string
+                  format: date-time
+
+      responses:
+
+        "201":
+          description: Track section added to train run successfully
+
+        "400":
+          description: Invalid train run track section data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train run or track section not found
+
+        "409":
+          description: Track section sequence conflicts with the train run
+
+
+  /train-run/{runId}/track-section/{trackSectionId}:
+
+    patch:
+      tags:
+        - Train Operations
+
+      summary: Update train run track section
+
+      parameters:
+
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+        - name: trackSectionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+
+                sequence_no:
+                  type: integer
+                  minimum: 1
+
+                planned_entry_at:
+                  type: string
+                  format: date-time
+
+                planned_exit_at:
+                  type: string
+                  format: date-time
+
+      responses:
+
+        "200":
+          description: Train run track section updated successfully
+
+        "400":
+          description: Invalid track section data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train run track section not found
+
+        "409":
+          description: Track section timing or sequence conflicts
+
+
+    delete:
+      tags:
+        - Train Operations
+
+      summary: Remove track section from train run
+
+      parameters:
+
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+        - name: trackSectionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+
+        "204":
+          description: Track section removed successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Train run track section not found
+
+        "409":
+          description: Track section cannot be removed because it is required by operational data
+
+
+  /train-run/{runId}/block-section:
+    get:
+      tags:
+        - Train Operations
+      summary: List block sections used by train run
+      description: |
+        Returns the ordered block sections planned for occupation
+        by a train run.
+
+        This is a critical operational dataset for conflict
+        detection and automatic block planning.
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Train run block sections retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    block_section_id:
+                      type: string
+                      format: uuid
+                    sequence_no:
+                      type: integer
+                    planned_entry_at:
+                      type: string
+                      format: date-time
+                    planned_exit_at:
+                      type: string
+                      format: date-time
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+        "403":
+          description: Insufficient permissions
+        "404":
+          description: Train run not found
+        "500":
+          description: Internal server error
+
+    post:
+      tags:
+        - Train Operations
+      summary: Add block section to train run
+      description: |
+        Associates a block section with a train run and records
+        the planned occupation window.
+
+        This information is later used by conflict detection
+        and scheduling services.
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - block_section_id
+                - sequence_no
+              properties:
+                block_section_id:
+                  type: string
+                  format: uuid
+                sequence_no:
+                  type: integer
+                  minimum: 1
+                planned_entry_at:
+                  type: string
+                  format: date-time
+                planned_exit_at:
+                  type: string
+                  format: date-time
+      responses:
+        "201":
+          description: Block section added to train run successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  block_section_id:
+                    type: string
+                    format: uuid
+                  sequence_no:
+                    type: integer
+                  planned_entry_at:
+                    type: string
+                    format: date-time
+                  planned_exit_at:
+                    type: string
+                    format: date-time
+        "400":
+          description: Invalid train run block section data
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+        "403":
+          description: Insufficient permissions
+        "404":
+          description: Train run or block section not found
+        "409":
+          description: Block section sequence or occupation window conflicts with the train run
+        "500":
+          description: Internal server error
+
+  /train-run/{runId}/block-section/{blockSectionId}:
+    patch:
+      tags:
+        - Train Operations
+      summary: Update train run block section
+      description: |
+        Updates the sequence or planned occupation timing
+        of a block section associated with a train run.
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: blockSectionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sequence_no:
+                  type: integer
+                  minimum: 1
+                planned_entry_at:
+                  type: string
+                  format: date-time
+                planned_exit_at:
+                  type: string
+                  format: date-time
+      responses:
+        "200":
+          description: Train run block section updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  block_section_id:
+                    type: string
+                    format: uuid
+                  sequence_no:
+                    type: integer
+                  planned_entry_at:
+                    type: string
+                    format: date-time
+                  planned_exit_at:
+                    type: string
+                    format: date-time
+        "400":
+          description: Invalid update data
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+        "403":
+          description: Insufficient permissions
+        "404":
+          description: Train run block section not found
+        "409":
+          description: Sequence or occupation timing conflicts with another block section
+        "500":
+          description: Internal server error
+
+    delete:
+      tags:
+        - Train Operations
+      summary: Remove block section from train run
+      description: |
+        Removes the association between a block section
+        and a train run.
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: blockSectionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Block section removed from train run successfully
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+        "403":
+          description: Insufficient permissions
+        "404":
+          description: Train run block section not found
+        "409":
+          description: Block section cannot be removed because it is required by related operational data
+        "500":
+          description: Internal server error
+
+  #
+  #
+  #################################################
+  # Forecasting
+  ##################################################
+  /traffic-forecast:
+    get:
+      tags:
+        - Forecasting
+      summary: List traffic forecasts
+      description: |
+        Returns traffic forecasts generated for railway divisions.
+
+        Forecasts can be filtered by division, forecast type,
+        forecast date, and status.
+      parameters:
+        - name: division_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter forecasts by railway division.
+
+        - name: forecast_type
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter forecasts by forecast type.
+
+        - name: forecast_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Filter forecasts by forecast date.
+
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter forecasts by status.
+
+      responses:
+        "200":
+          description: Traffic forecasts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    division_id:
+                      type: string
+                      format: uuid
+                    forecast_type:
+                      type: string
+                    forecast_date:
+                      type: string
+                      format: date
+                    horizon_start_at:
+                      type: string
+                      format: date-time
+                    horizon_end_at:
+                      type: string
+                      format: date-time
+                    status:
+                      type: string
+
+        "400":
+          description: Invalid query parameters
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "500":
+          description: Internal server error
+
+
+    post:
+      tags:
+        - Forecasting
+      summary: Create traffic forecast
+      description: |
+        Creates a traffic forecast for a railway division.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - division_id
+                - forecast_type
+                - forecast_date
+                - horizon_start_at
+                - horizon_end_at
+              properties:
+                division_id:
+                  type: string
+                  format: uuid
+
+                forecast_type:
+                  type: string
+
+                forecast_date:
+                  type: string
+                  format: date
+
+                horizon_start_at:
+                  type: string
+                  format: date-time
+
+                horizon_end_at:
+                  type: string
+                  format: date-time
+
+                status:
+                  type: string
+
+      responses:
+        "201":
+          description: Traffic forecast created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  division_id:
+                    type: string
+                    format: uuid
+                  forecast_type:
+                    type: string
+                  forecast_date:
+                    type: string
+                    format: date
+                  horizon_start_at:
+                    type: string
+                    format: date-time
+                  horizon_end_at:
+                    type: string
+                    format: date-time
+                  status:
+                    type: string
+
+        "400":
+          description: Invalid traffic forecast data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Railway division not found
+
+        "409":
+          description: Forecast conflicts with an existing forecast
+
+        "500":
+          description: Internal server error
+
+
+  /traffic-forecast/{forecastId}:
+    get:
+      tags:
+        - Forecasting
+      summary: Get traffic forecast
+      description: Returns a traffic forecast by ID.
+      parameters:
+        - name: forecastId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        "200":
+          description: Traffic forecast retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  division_id:
+                    type: string
+                    format: uuid
+                  forecast_type:
+                    type: string
+                  forecast_date:
+                    type: string
+                    format: date
+                  horizon_start_at:
+                    type: string
+                    format: date-time
+                  horizon_end_at:
+                    type: string
+                    format: date-time
+                  status:
+                    type: string
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Traffic forecast not found
+
+        "500":
+          description: Internal server error
+
+
+    patch:
+      tags:
+        - Forecasting
+      summary: Update traffic forecast
+      description: Updates an existing traffic forecast.
+      parameters:
+        - name: forecastId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                forecast_type:
+                  type: string
+
+                forecast_date:
+                  type: string
+                  format: date
+
+                horizon_start_at:
+                  type: string
+                  format: date-time
+
+                horizon_end_at:
+                  type: string
+                  format: date-time
+
+                status:
+                  type: string
+
+      responses:
+        "200":
+          description: Traffic forecast updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  division_id:
+                    type: string
+                    format: uuid
+                  forecast_type:
+                    type: string
+                  forecast_date:
+                    type: string
+                    format: date
+                  horizon_start_at:
+                    type: string
+                    format: date-time
+                  horizon_end_at:
+                    type: string
+                    format: date-time
+                  status:
+                    type: string
+
+        "400":
+          description: Invalid traffic forecast data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Traffic forecast not found
+
+        "409":
+          description: Forecast update conflicts with existing data
+
+        "500":
+          description: Internal server error
+
+
+    delete:
+      tags:
+        - Forecasting
+      summary: Delete traffic forecast
+      description: Deletes a traffic forecast.
+      parameters:
+        - name: forecastId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        "204":
+          description: Traffic forecast deleted successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Traffic forecast not found
+
+        "409":
+          description: Traffic forecast cannot be deleted because related forecast items exist
+
+        "500":
+          description: Internal server error
+
+
+  /traffic-forecast/{forecastId}/item:
+    get:
+      tags:
+        - Forecasting
+      summary: List traffic forecast items
+      description: |
+        Returns the block-section-level forecast items
+        belonging to a traffic forecast.
+      parameters:
+        - name: forecastId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+        - name: block_section_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter forecast items by block section.
+
+        - name: train_category
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter forecast items by train category.
+
+      responses:
+        "200":
+          description: Traffic forecast items retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    forecast_id:
+                      type: string
+                      format: uuid
+                    block_section_id:
+                      type: string
+                      format: uuid
+                    time_window_start:
+                      type: string
+                      format: date-time
+                    time_window_end:
+                      type: string
+                      format: date-time
+                    train_category:
+                      type: string
+                    expected_train_count:
+                      type: integer
+                    probability:
+                      type: number
+                      format: double
+                    expected_passenger_trains:
+                      type: integer
+                    expected_goods_trains:
+                      type: integer
+
+        "400":
+          description: Invalid query parameters
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Traffic forecast not found
+
+        "500":
+          description: Internal server error
+
+
+    post:
+      tags:
+        - Forecasting
+      summary: Add traffic forecast item
+      description: |
+        Adds a block-section-level traffic forecast item
+        to an existing traffic forecast.
+      parameters:
+        - name: forecastId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - block_section_id
+                - time_window_start
+                - time_window_end
+                - expected_train_count
+              properties:
+                block_section_id:
+                  type: string
+                  format: uuid
+
+                time_window_start:
+                  type: string
+                  format: date-time
+
+                time_window_end:
+                  type: string
+                  format: date-time
+
+                train_category:
+                  type: string
+
+                expected_train_count:
+                  type: integer
+                  minimum: 0
+
+                probability:
+                  type: number
+                  format: double
+
+                expected_passenger_trains:
+                  type: integer
+                  minimum: 0
+
+                expected_goods_trains:
+                  type: integer
+                  minimum: 0
+
+      responses:
+        "201":
+          description: Traffic forecast item created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  forecast_id:
+                    type: string
+                    format: uuid
+                  block_section_id:
+                    type: string
+                    format: uuid
+                  time_window_start:
+                    type: string
+                    format: date-time
+                  time_window_end:
+                    type: string
+                    format: date-time
+                  train_category:
+                    type: string
+                  expected_train_count:
+                    type: integer
+                  probability:
+                    type: number
+                    format: double
+                  expected_passenger_trains:
+                    type: integer
+                  expected_goods_trains:
+                    type: integer
+
+        "400":
+          description: Invalid traffic forecast item data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Traffic forecast or block section not found
+
+        "409":
+          description: Forecast item conflicts with an existing forecast item
+
+        "500":
+          description: Internal server error
+
+
+  /traffic-forecast-item/{forecastItemId}:
+    get:
+      tags:
+        - Forecasting
+      summary: Get traffic forecast item
+      description: Returns a traffic forecast item by ID.
+      parameters:
+        - name: forecastItemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        "200":
+          description: Traffic forecast item retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  forecast_id:
+                    type: string
+                    format: uuid
+                  block_section_id:
+                    type: string
+                    format: uuid
+                  time_window_start:
+                    type: string
+                    format: date-time
+                  time_window_end:
+                    type: string
+                    format: date-time
+                  train_category:
+                    type: string
+                  expected_train_count:
+                    type: integer
+                  probability:
+                    type: number
+                    format: double
+                  expected_passenger_trains:
+                    type: integer
+                  expected_goods_trains:
+                    type: integer
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Traffic forecast item not found
+
+        "500":
+          description: Internal server error
+
+
+    patch:
+      tags:
+        - Forecasting
+      summary: Update traffic forecast item
+      description: Updates an existing traffic forecast item.
+      parameters:
+        - name: forecastItemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                block_section_id:
+                  type: string
+                  format: uuid
+
+                time_window_start:
+                  type: string
+                  format: date-time
+
+                time_window_end:
+                  type: string
+                  format: date-time
+
+                train_category:
+                  type: string
+
+                expected_train_count:
+                  type: integer
+                  minimum: 0
+
+                probability:
+                  type: number
+                  format: double
+
+                expected_passenger_trains:
+                  type: integer
+                  minimum: 0
+
+                expected_goods_trains:
+                  type: integer
+                  minimum: 0
+
+      responses:
+        "200":
+          description: Traffic forecast item updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  forecast_id:
+                    type: string
+                    format: uuid
+                  block_section_id:
+                    type: string
+                    format: uuid
+                  time_window_start:
+                    type: string
+                    format: date-time
+                  time_window_end:
+                    type: string
+                    format: date-time
+                  train_category:
+                    type: string
+                  expected_train_count:
+                    type: integer
+                  probability:
+                    type: number
+                    format: double
+                  expected_passenger_trains:
+                    type: integer
+                  expected_goods_trains:
+                    type: integer
+
+        "400":
+          description: Invalid traffic forecast item data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Traffic forecast item or block section not found
+
+        "409":
+          description: Forecast item update conflicts with existing data
+
+        "500":
+          description: Internal server error
+
+
+    delete:
+      tags:
+        - Forecasting
+      summary: Delete traffic forecast item
+      description: Deletes a traffic forecast item.
+      parameters:
+        - name: forecastItemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        "204":
+          description: Traffic forecast item deleted successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Traffic forecast item not found
+
+        "409":
+          description: Forecast item cannot be deleted because it is required by related operational data
+
+        "500":
+          description: Internal server error
+  #
+  #
+  #
+  ################################################
+  # Scheduling
+  ################################################
+  /scheduling-run:
+    get:
+      tags:
+        - Scheduling
+      summary: List scheduling runs
+      description: |
+        Returns scheduling runs used for automatic maintenance
+        block planning.
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter scheduling runs by status.
+
+        - name: algorithm_type
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter scheduling runs by algorithm type.
+
+        - name: created_by
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter scheduling runs by the user who created them.
+
+      responses:
+        "200":
+          description: Scheduling runs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    created_by:
+                      type: string
+                      format: uuid
+                    run_code:
+                      type: string
+                    algorithm_type:
+                      type: string
+                    status:
+                      type: string
+                    planning_start_at:
+                      type: string
+                      format: date-time
+                    planning_end_at:
+                      type: string
+                      format: date-time
+                    started_at:
+                      type: string
+                      format: date-time
+                    completed_at:
+                      type: string
+                      format: date-time
+                    objective_description:
+                      type: string
+                    objective_weights:
+                      type: object
+                      additionalProperties: true
+                    total_tasks_considered:
+                      type: integer
+                    total_tasks_scheduled:
+                      type: integer
+                    total_tasks_unscheduled:
+                      type: integer
+                    error_message:
+                      type: string
+
+        "400":
+          description: Invalid query parameters
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "500":
+          description: Internal server error
+
+
+    post:
+      tags:
+        - Scheduling
+      summary: Create scheduling run
+      description: |
+        Creates a scheduling run for automatic maintenance
+        block planning.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - run_code
+                - algorithm_type
+                - planning_start_at
+                - planning_end_at
+              properties:
+                run_code:
+                  type: string
+
+                algorithm_type:
+                  type: string
+
+                status:
+                  type: string
+
+                planning_start_at:
+                  type: string
+                  format: date-time
+
+                planning_end_at:
+                  type: string
+                  format: date-time
+
+                objective_description:
+                  type: string
+
+                objective_weights:
+                  type: object
+                  additionalProperties: true
+
+      responses:
+        "201":
+          description: Scheduling run created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  created_by:
+                    type: string
+                    format: uuid
+                  run_code:
+                    type: string
+                  algorithm_type:
+                    type: string
+                  status:
+                    type: string
+                  planning_start_at:
+                    type: string
+                    format: date-time
+                  planning_end_at:
+                    type: string
+                    format: date-time
+                  objective_description:
+                    type: string
+                  objective_weights:
+                    type: object
+                    additionalProperties: true
+                  total_tasks_considered:
+                    type: integer
+                  total_tasks_scheduled:
+                    type: integer
+                  total_tasks_unscheduled:
+                    type: integer
+                  error_message:
+                    type: string
+
+        "400":
+          description: Invalid scheduling run data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "409":
+          description: Run code already exists
+
+        "500":
+          description: Internal server error
+
+
+  /scheduling-run/{runId}:
+    get:
+      tags:
+        - Scheduling
+      summary: Get scheduling run
+      description: Returns a scheduling run by ID.
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        "200":
+          description: Scheduling run retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  created_by:
+                    type: string
+                    format: uuid
+                  run_code:
+                    type: string
+                  algorithm_type:
+                    type: string
+                  status:
+                    type: string
+                  planning_start_at:
+                    type: string
+                    format: date-time
+                  planning_end_at:
+                    type: string
+                    format: date-time
+                  started_at:
+                    type: string
+                    format: date-time
+                  completed_at:
+                    type: string
+                    format: date-time
+                  objective_description:
+                    type: string
+                  objective_weights:
+                    type: object
+                    additionalProperties: true
+                  total_tasks_considered:
+                    type: integer
+                  total_tasks_scheduled:
+                    type: integer
+                  total_tasks_unscheduled:
+                    type: integer
+                  error_message:
+                    type: string
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Scheduling run not found
+
+        "500":
+          description: Internal server error
+
+
+    patch:
+      tags:
+        - Scheduling
+      summary: Update scheduling run
+      description: Updates the configuration or status of a scheduling run.
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                algorithm_type:
+                  type: string
+
+                status:
+                  type: string
+
+                planning_start_at:
+                  type: string
+                  format: date-time
+
+                planning_end_at:
+                  type: string
+                  format: date-time
+
+                started_at:
+                  type: string
+                  format: date-time
+
+                completed_at:
+                  type: string
+                  format: date-time
+
+                objective_description:
+                  type: string
+
+                objective_weights:
+                  type: object
+                  additionalProperties: true
+
+                total_tasks_considered:
+                  type: integer
+
+                total_tasks_scheduled:
+                  type: integer
+
+                total_tasks_unscheduled:
+                  type: integer
+
+                error_message:
+                  type: string
+
+      responses:
+        "200":
+          description: Scheduling run updated successfully
+
+        "400":
+          description: Invalid scheduling run data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Scheduling run not found
+
+        "409":
+          description: Scheduling run cannot be updated in its current status
+
+        "500":
+          description: Internal server error
+
+
+  /scheduling-run/{runId}/task:
+    get:
+      tags:
+        - Scheduling
+      summary: List tasks considered by scheduling run
+      description: |
+        Returns maintenance tasks considered during a scheduling run,
+        including prediction and priority information.
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+        - name: consideration_status
+          in: query
+          required: false
+          schema:
+            type: string
+
+      responses:
+        "200":
+          description: Scheduling run tasks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    scheduling_run_id:
+                      type: string
+                      format: uuid
+                    maintenance_task_id:
+                      type: string
+                      format: uuid
+                    consideration_status:
+                      type: string
+                    unscheduled_reason:
+                      type: string
+                    predicted_duration_hours:
+                      type: number
+                      format: double
+                    effective_duration_hours:
+                      type: number
+                      format: double
+                    priority_score:
+                      type: number
+                      format: double
+                    risk_score:
+                      type: number
+                      format: double
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Scheduling run not found
+
+        "500":
+          description: Internal server error
+
+
+    post:
+      tags:
+        - Scheduling
+      summary: Add maintenance task to scheduling run
+      description: Adds a maintenance task for consideration by a scheduling run.
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - maintenance_task_id
+              properties:
+                maintenance_task_id:
+                  type: string
+                  format: uuid
+
+                consideration_status:
+                  type: string
+
+                unscheduled_reason:
+                  type: string
+
+                predicted_duration_hours:
+                  type: number
+                  format: double
+
+                effective_duration_hours:
+                  type: number
+                  format: double
+
+                priority_score:
+                  type: number
+                  format: double
+
+                risk_score:
+                  type: number
+                  format: double
+
+      responses:
+        "201":
+          description: Maintenance task added to scheduling run successfully
+
+        "400":
+          description: Invalid scheduling task data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Scheduling run or maintenance task not found
+
+        "409":
+          description: Maintenance task is already part of the scheduling run
+
+        "500":
+          description: Internal server error
+
+
+  /scheduling-run/{runId}/task/{maintenanceTaskId}:
+    patch:
+      tags:
+        - Scheduling
+      summary: Update scheduling run task
+      description: Updates task consideration and scoring information.
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+        - name: maintenanceTaskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                consideration_status:
+                  type: string
+
+                unscheduled_reason:
+                  type: string
+
+                predicted_duration_hours:
+                  type: number
+                  format: double
+
+                effective_duration_hours:
+                  type: number
+                  format: double
+
+                priority_score:
+                  type: number
+                  format: double
+
+                risk_score:
+                  type: number
+                  format: double
+
+      responses:
+        "200":
+          description: Scheduling run task updated successfully
+
+        "400":
+          description: Invalid scheduling task data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Scheduling run task not found
+
+        "500":
+          description: Internal server error
+
+
+    delete:
+      tags:
+        - Scheduling
+      summary: Remove maintenance task from scheduling run
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+        - name: maintenanceTaskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        "204":
+          description: Maintenance task removed from scheduling run successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Scheduling run task not found
+
+        "409":
+          description: Scheduling run task cannot be removed because it is referenced by scheduled data
+
+        "500":
+          description: Internal server error
+
+
+  /scheduling-run/{runId}/scheduled-task:
+    get:
+      tags:
+        - Scheduling
+      summary: List scheduled tasks
+      description: Returns maintenance tasks successfully scheduled by a scheduling run.
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+
+      responses:
+        "200":
+          description: Scheduled tasks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    scheduling_run_id:
+                      type: string
+                      format: uuid
+                    maintenance_task_id:
+                      type: string
+                      format: uuid
+                    status:
+                      type: string
+                    planned_start_at:
+                      type: string
+                      format: date-time
+                    planned_end_at:
+                      type: string
+                      format: date-time
+                    planned_duration_hours:
+                      type: number
+                      format: double
+                    objective_contribution:
+                      type: number
+                      format: double
+                    scheduling_reason:
+                      type: string
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Scheduling run not found
+
+        "500":
+          description: Internal server error
+
+
+    post:
+      tags:
+        - Scheduling
+      summary: Create scheduled task
+      description: Creates a scheduled maintenance task within a scheduling run.
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - maintenance_task_id
+                - planned_start_at
+                - planned_end_at
+              properties:
+                maintenance_task_id:
+                  type: string
+                  format: uuid
+
+                status:
+                  type: string
+
+                planned_start_at:
+                  type: string
+                  format: date-time
+
+                planned_end_at:
+                  type: string
+                  format: date-time
+
+                planned_duration_hours:
+                  type: number
+                  format: double
+
+                objective_contribution:
+                  type: number
+                  format: double
+
+                scheduling_reason:
+                  type: string
+
+      responses:
+        "201":
+          description: Scheduled task created successfully
+
+        "400":
+          description: Invalid scheduled task data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Scheduling run or maintenance task not found
+
+        "409":
+          description: Maintenance task is already scheduled in this run
+
+        "500":
+          description: Internal server error
+
+
+  /scheduled-task/{scheduledTaskId}:
+    get:
+      tags:
+        - Scheduling
+      summary: Get scheduled task
+      parameters:
+        - name: scheduledTaskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        "200":
+          description: Scheduled task retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  scheduling_run_id:
+                    type: string
+                    format: uuid
+                  maintenance_task_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  planned_start_at:
+                    type: string
+                    format: date-time
+                  planned_end_at:
+                    type: string
+                    format: date-time
+                  planned_duration_hours:
+                    type: number
+                    format: double
+                  objective_contribution:
+                    type: number
+                    format: double
+                  scheduling_reason:
+                    type: string
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Scheduled task not found
+
+        "500":
+          description: Internal server error
+
+
+    patch:
+      tags:
+        - Scheduling
+      summary: Update scheduled task
+      parameters:
+        - name: scheduledTaskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+
+                planned_start_at:
+                  type: string
+                  format: date-time
+
+                planned_end_at:
+                  type: string
+                  format: date-time
+
+                planned_duration_hours:
+                  type: number
+                  format: double
+
+                objective_contribution:
+                  type: number
+                  format: double
+
+                scheduling_reason:
+                  type: string
+
+      responses:
+        "200":
+          description: Scheduled task updated successfully
+
+        "400":
+          description: Invalid scheduled task data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Scheduled task not found
+
+        "409":
+          description: Scheduled task update conflicts with existing schedule
+
+        "500":
+          description: Internal server error
+
+
+    delete:
+      tags:
+        - Scheduling
+      summary: Delete scheduled task
+      parameters:
+        - name: scheduledTaskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        "204":
+          description: Scheduled task deleted successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Scheduled task not found
+
+        "409":
+          description: Scheduled task cannot be deleted because scheduled blocks depend on it
+
+        "500":
+          description: Internal server error
+
+
+  /scheduled-task/{scheduledTaskId}/block:
+    get:
+      tags:
+        - Scheduling
+      summary: List scheduled blocks
+      description: Returns the blocks allocated to a scheduled maintenance task.
+      parameters:
+        - name: scheduledTaskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        "200":
+          description: Scheduled blocks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    scheduling_run_id:
+                      type: string
+                      format: uuid
+                    scheduled_task_id:
+                      type: string
+                      format: uuid
+                    block_section_id:
+                      type: string
+                      format: uuid
+                    block_code:
+                      type: string
+                    status:
+                      type: string
+                    planned_start_at:
+                      type: string
+                      format: date-time
+                    planned_end_at:
+                      type: string
+                      format: date-time
+                    duration_minutes:
+                      type: integer
+                    full_block:
+                      type: boolean
+                    power_disconnection:
+                      type: boolean
+                    train_impact_score:
+                      type: number
+                      format: double
+                    asset_impact_score:
+                      type: number
+                      format: double
+                    scheduling_reason:
+                      type: string
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Scheduled task not found
+
+        "500":
+          description: Internal server error
+
+
+    post:
+      tags:
+        - Scheduling
+      summary: Create scheduled block
+      description: Creates a block allocation for a scheduled maintenance task.
+      parameters:
+        - name: scheduledTaskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - block_section_id
+                - planned_start_at
+                - planned_end_at
+              properties:
+                block_section_id:
+                  type: string
+                  format: uuid
+
+                block_code:
+                  type: string
+
+                status:
+                  type: string
+
+                planned_start_at:
+                  type: string
+                  format: date-time
+
+                planned_end_at:
+                  type: string
+                  format: date-time
+
+                duration_minutes:
+                  type: integer
+
+                full_block:
+                  type: boolean
+
+                power_disconnection:
+                  type: boolean
+
+                train_impact_score:
+                  type: number
+                  format: double
+
+                asset_impact_score:
+                  type: number
+                  format: double
+
+                scheduling_reason:
+                  type: string
+
+      responses:
+        "201":
+          description: Scheduled block created successfully
+
+        "400":
+          description: Invalid scheduled block data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Scheduled task or block section not found
+
+        "409":
+          description: Scheduled block conflicts with an existing block allocation
+
+        "500":
+          description: Internal server error
+
+
+  /scheduled-block/{scheduledBlockId}:
+    get:
+      tags:
+        - Scheduling
+      summary: Get scheduled block
+      parameters:
+        - name: scheduledBlockId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        "200":
+          description: Scheduled block retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  scheduling_run_id:
+                    type: string
+                    format: uuid
+                  scheduled_task_id:
+                    type: string
+                    format: uuid
+                  block_section_id:
+                    type: string
+                    format: uuid
+                  block_code:
+                    type: string
+                  status:
+                    type: string
+                  planned_start_at:
+                    type: string
+                    format: date-time
+                  planned_end_at:
+                    type: string
+                    format: date-time
+                  duration_minutes:
+                    type: integer
+                  full_block:
+                    type: boolean
+                  power_disconnection:
+                    type: boolean
+                  train_impact_score:
+                    type: number
+                    format: double
+                  asset_impact_score:
+                    type: number
+                    format: double
+                  scheduling_reason:
+                    type: string
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Scheduled block not found
+
+        "500":
+          description: Internal server error
+
+
+    patch:
+      tags:
+        - Scheduling
+      summary: Update scheduled block
+      parameters:
+        - name: scheduledBlockId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+
+                planned_start_at:
+                  type: string
+                  format: date-time
+
+                planned_end_at:
+                  type: string
+                  format: date-time
+
+                duration_minutes:
+                  type: integer
+
+                full_block:
+                  type: boolean
+
+                power_disconnection:
+                  type: boolean
+
+                train_impact_score:
+                  type: number
+                  format: double
+
+                asset_impact_score:
+                  type: number
+                  format: double
+
+                scheduling_reason:
+                  type: string
+
+      responses:
+        "200":
+          description: Scheduled block updated successfully
+
+        "400":
+          description: Invalid scheduled block data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Scheduled block not found
+
+        "409":
+          description: Scheduled block update conflicts with existing allocation
+
+        "500":
+          description: Internal server error
+
+
+    delete:
+      tags:
+        - Scheduling
+      summary: Delete scheduled block
+      parameters:
+        - name: scheduledBlockId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        "204":
+          description: Scheduled block deleted successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Scheduled block not found
+
+        "409":
+          description: Scheduled block cannot be deleted because resources are allocated to it
+
+        "500":
+          description: Internal server error
+
+
+  /scheduled-block/{scheduledBlockId}/resource:
+    get:
+      tags:
+        - Scheduling
+      summary: List resources allocated to scheduled block
+      parameters:
+        - name: scheduledBlockId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        "200":
+          description: Allocated resources retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    scheduled_block_id:
+                      type: string
+                      format: uuid
+                    resource_id:
+                      type: string
+                      format: uuid
+                    quantity_allocated:
+                      type: integer
+                    allocated_start_at:
+                      type: string
+                      format: date-time
+                    allocated_end_at:
+                      type: string
+                      format: date-time
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Scheduled block not found
+
+        "500":
+          description: Internal server error
+
+
+    post:
+      tags:
+        - Scheduling
+      summary: Allocate resource to scheduled block
+      parameters:
+        - name: scheduledBlockId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resource_id
+                - quantity_allocated
+              properties:
+                resource_id:
+                  type: string
+                  format: uuid
+
+                quantity_allocated:
+                  type: integer
+                  minimum: 1
+
+                allocated_start_at:
+                  type: string
+                  format: date-time
+
+                allocated_end_at:
+                  type: string
+                  format: date-time
+
+      responses:
+        "201":
+          description: Resource allocated successfully
+
+        "400":
+          description: Invalid resource allocation data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Scheduled block or resource not found
+
+        "409":
+          description: Resource allocation conflicts with resource availability
+
+        "500":
+          description: Internal server error
+
+
+  /scheduled-block/{scheduledBlockId}/resource/{resourceId}:
+    patch:
+      tags:
+        - Scheduling
+      summary: Update scheduled block resource allocation
+      parameters:
+        - name: scheduledBlockId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity_allocated:
+                  type: integer
+                  minimum: 1
+
+                allocated_start_at:
+                  type: string
+                  format: date-time
+
+                allocated_end_at:
+                  type: string
+                  format: date-time
+
+      responses:
+        "200":
+          description: Resource allocation updated successfully
+
+        "400":
+          description: Invalid resource allocation data
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Resource allocation not found
+
+        "409":
+          description: Resource allocation conflicts with resource availability
+
+        "500":
+          description: Internal server error
+
+
+    delete:
+      tags:
+        - Scheduling
+      summary: Remove resource from scheduled block
+      parameters:
+        - name: scheduledBlockId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        "204":
+          description: Resource removed from scheduled block successfully
+
+        "401":
+          description: Unauthorized - Missing, invalid, or expired Firebase ID Token
+
+        "403":
+          description: Insufficient permissions
+
+        "404":
+          description: Resource allocation not found
+
+        "409":
+          description: Resource allocation cannot be removed because it is required by the scheduled block
+
+        "500":
+          description: Internal server error
+
+
+  /schedule-conflict:
+    get:
+      tags:
+        - Conflicts
+      summary: Get schedule conflicts
+      description: Retrieve detected conflicts for scheduling runs.
+      parameters:
+        - name: schedulingRunId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: severity
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: conflictType
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Conflicts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    scheduling_run_id:
+                      type: string
+                      format: uuid
+                    scheduled_task_id:
+                      type: string
+                      format: uuid
+                    scheduled_block_id:
+                      type: string
+                      format: uuid
+                    train_run_id:
+                      type: string
+                      format: uuid
+                    resource_id:
+                      type: string
+                      format: uuid
+                    track_section_id:
+                      type: string
+                      format: uuid
+                    block_section_id:
+                      type: string
+                      format: uuid
+                    conflict_type:
+                      type: string
+                    severity:
+                      type: string
+                    status:
+                      type: string
+                    description:
+                      type: string
+                    conflict_duration_minutes:
+                      type: integer
+                    conflict_start_at:
+                      type: string
+                      format: date-time
+                    conflict_end_at:
+                      type: string
+                      format: date-time
+                    resolved_at:
+                      type: string
+                      format: date-time
+                      nullable: true
+        '400':
+          description: Invalid filter parameters
+
+    post:
+      tags:
+        - Conflicts
+      summary: Create a schedule conflict
+      description: Create a conflict record detected during scheduling or validation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - scheduling_run_id
+                - conflict_type
+                - severity
+                - status
+              properties:
+                scheduling_run_id:
+                  type: string
+                  format: uuid
+                scheduled_task_id:
+                  type: string
+                  format: uuid
+                scheduled_block_id:
+                  type: string
+                  format: uuid
+                train_run_id:
+                  type: string
+                  format: uuid
+                resource_id:
+                  type: string
+                  format: uuid
+                track_section_id:
+                  type: string
+                  format: uuid
+                block_section_id:
+                  type: string
+                  format: uuid
+                conflict_type:
+                  type: string
+                severity:
+                  type: string
+                status:
+                  type: string
+                description:
+                  type: string
+                conflict_duration_minutes:
+                  type: integer
+                conflict_start_at:
+                  type: string
+                  format: date-time
+                conflict_end_at:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Conflict created successfully
+        '400':
+          description: Invalid conflict data
+
+  /schedule-conflict/{conflictId}:
+    get:
+      tags:
+        - Conflicts
+      summary: Get schedule conflict
+      description: Retrieve details of a specific schedule conflict.
+      parameters:
+        - name: conflictId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Conflict retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  scheduling_run_id:
+                    type: string
+                    format: uuid
+                  scheduled_task_id:
+                    type: string
+                    format: uuid
+                  scheduled_block_id:
+                    type: string
+                    format: uuid
+                  train_run_id:
+                    type: string
+                    format: uuid
+                  resource_id:
+                    type: string
+                    format: uuid
+                  track_section_id:
+                    type: string
+                    format: uuid
+                  block_section_id:
+                    type: string
+                    format: uuid
+                  conflict_type:
+                    type: string
+                  severity:
+                    type: string
+                  status:
+                    type: string
+                  description:
+                    type: string
+                  conflict_duration_minutes:
+                    type: integer
+                  conflict_start_at:
+                    type: string
+                    format: date-time
+                  conflict_end_at:
+                    type: string
+                    format: date-time
+                  resolved_at:
+                    type: string
+                    format: date-time
+                    nullable: true
+        '404':
+          description: Conflict not found
+
+    patch:
+      tags:
+        - Conflicts
+      summary: Update schedule conflict
+      description: Update conflict status or conflict details.
+      parameters:
+        - name: conflictId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                severity:
+                  type: string
+                status:
+                  type: string
+                description:
+                  type: string
+                conflict_duration_minutes:
+                  type: integer
+                conflict_start_at:
+                  type: string
+                  format: date-time
+                conflict_end_at:
+                  type: string
+                  format: date-time
+                resolved_at:
+                  type: string
+                  format: date-time
+                  nullable: true
+      responses:
+        '200':
+          description: Conflict updated successfully
+        '400':
+          description: Invalid conflict data
+        '404':
+          description: Conflict not found
+
+    delete:
+      tags:
+        - Conflicts
+      summary: Delete schedule conflict
+      description: Delete a schedule conflict record.
+      parameters:
+        - name: conflictId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Conflict deleted successfully
+        '404':
+          description: Conflict not found
+
+  /schedule-conflict/{conflictId}/status:
+    patch:
+      tags:
+        - Conflicts
+      summary: Update conflict status
+      description: Change the current status of a schedule conflict.
+      parameters:
+        - name: conflictId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                resolved_at:
+                  type: string
+                  format: date-time
+                  nullable: true
+      responses:
+        '200':
+          description: Conflict status updated successfully
+        '400':
+          description: Invalid status
+        '404':
+          description: Conflict not found
+
+  /schedule-metric:
+    get:
+      tags:
+        - Metrics
+      summary: Get scheduling metrics
+      description: Retrieve calculated metrics for scheduling runs.
+      parameters:
+        - name: schedulingRunId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Scheduling metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    scheduling_run_id:
+                      type: string
+                      format: uuid
+                    total_tasks:
+                      type: integer
+                    scheduled_tasks:
+                      type: integer
+                    unscheduled_tasks:
+                      type: integer
+                    total_blocks:
+                      type: integer
+                    total_block_hours:
+                      type: integer
+                    train_conflicts:
+                      type: integer
+                    resource_conflicts:
+                      type: integer
+                    safety_conflicts:
+                      type: integer
+                    estimated_train_delay_minutes:
+                      type: number
+                      format: double
+                    estimated_asset_downtime_hours:
+                      type: number
+                      format: double
+                    estimated_asset_availability_percentage:
+                      type: number
+                      format: double
+                    resource_utilization_percentage:
+                      type: number
+                      format: double
+                    maintenance_completion_percentage:
+                      type: number
+                      format: double
+                    total_objective_score:
+                      type: number
+                      format: double
+                    calculated_at:
+                      type: string
+                      format: date-time
+        "400":
+          description: Invalid query parameters
+        "404":
+          description: Scheduling metrics not found
+
+  /schedule-metric/{metricId}:
+    get:
+      tags:
+        - Metrics
+      summary: Get scheduling metric
+      description: Retrieve metrics for a specific scheduling run.
+      parameters:
+        - name: metricId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Scheduling metric retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  scheduling_run_id:
+                    type: string
+                    format: uuid
+                  total_tasks:
+                    type: integer
+                  scheduled_tasks:
+                    type: integer
+                  unscheduled_tasks:
+                    type: integer
+                  total_blocks:
+                    type: integer
+                  total_block_hours:
+                    type: integer
+                  train_conflicts:
+                    type: integer
+                  resource_conflicts:
+                    type: integer
+                  safety_conflicts:
+                    type: integer
+                  estimated_train_delay_minutes:
+                    type: number
+                    format: double
+                  estimated_asset_downtime_hours:
+                    type: number
+                    format: double
+                  estimated_asset_availability_percentage:
+                    type: number
+                    format: double
+                  resource_utilization_percentage:
+                    type: number
+                    format: double
+                  maintenance_completion_percentage:
+                    type: number
+                    format: double
+                  total_objective_score:
+                    type: number
+                    format: double
+                  calculated_at:
+                    type: string
+                    format: date-time
+        "404":
+          description: Scheduling metric not found
+
+  /schedule-baseline-metric:
+    get:
+      tags:
+        - Metrics
+      summary: Get baseline scheduling metrics
+      description: Retrieve baseline metrics used for comparison with optimized scheduling.
+      parameters:
+        - name: schedulingRunId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Baseline metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    scheduling_run_id:
+                      type: string
+                      format: uuid
+                    total_tasks:
+                      type: integer
+                    tasks_without_optimized_scheduling:
+                      type: integer
+                    estimated_block_hours:
+                      type: integer
+                    estimated_train_delay_minutes:
+                      type: number
+                      format: double
+                    estimated_asset_downtime_hours:
+                      type: number
+                      format: double
+                    estimated_asset_availability_percentage:
+                      type: number
+                      format: double
+                    resource_utilization_percentage:
+                      type: number
+                      format: double
+                    calculated_at:
+                      type: string
+                      format: date-time
+        "400":
+          description: Invalid query parameters
+        "404":
+          description: Baseline metrics not found
+
+  /schedule-baseline-metric/{baselineMetricId}:
+    get:
+      tags:
+        - Metrics
+      summary: Get baseline scheduling metric
+      description: Retrieve a specific baseline metric record.
+      parameters:
+        - name: baselineMetricId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Baseline scheduling metric retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  scheduling_run_id:
+                    type: string
+                    format: uuid
+                  total_tasks:
+                    type: integer
+                  tasks_without_optimized_scheduling:
+                    type: integer
+                  estimated_block_hours:
+                    type: integer
+                  estimated_train_delay_minutes:
+                    type: number
+                    format: double
+                  estimated_asset_downtime_hours:
+                    type: number
+                    format: double
+                  estimated_asset_availability_percentage:
+                    type: number
+                    format: double
+                  resource_utilization_percentage:
+                    type: number
+                    format: double
+                  calculated_at:
+                    type: string
+                    format: date-time
+        "404":
+          description: Baseline metric not found
